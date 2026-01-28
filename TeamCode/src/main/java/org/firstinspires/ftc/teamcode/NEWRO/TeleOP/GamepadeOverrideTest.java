@@ -1,7 +1,4 @@
-package org.firstinspires.ftc.teamcode.NEWRO.Testing;
-
-
-
+package org.firstinspires.ftc.teamcode.NEWRO.TeleOP;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -10,9 +7,9 @@ import com.arcrobotics.ftclib.controller.PIDController;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -20,17 +17,20 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.R;
+
+import java.util.List;
 
 @Config//important
 @TeleOp
-public class goodRevolver2 extends OpMode {
+public class GamepadeOverrideTest extends OpMode {
     private PIDFController controller;//important
 
     public static double p = 0.1, i = 0, d= 0.0002;
@@ -44,12 +44,19 @@ public class goodRevolver2 extends OpMode {
 
     public static int shoot = 48;
 
+    public static double HighVelocityShot = 4000;
+    public static double LowVelocityShot = 2700;
+    public double curTargetVelocity = HighVelocityShot;
+    public static double F = 4.5;
+    public static double P = 4;
 
     private final double ticks_in_degree = 700/ 180.0;//changes depending on the motor
 
     private DcMotorEx Revolver;
     private CRServo turretServo;
-
+    private Servo arm;
+    private DcMotorEx shooterT;
+    private DcMotorEx shooterB;
     private Limelight3A limelight;
     private IMU imu;
     private DcMotorEx Intake;
@@ -61,6 +68,7 @@ public class goodRevolver2 extends OpMode {
     private DcMotor rightBack;
     private DcMotor leftBack;
 
+    private int lockedTargetID = -1;
 
 
     public static int Pollher = 100;
@@ -121,7 +129,28 @@ public class goodRevolver2 extends OpMode {
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
 
+
+        shooterT = hardwareMap.get(DcMotorEx.class,"shooterT");
+        shooterT.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooterT.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
+        shooterT.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        telemetry.addLine("init complete");
+
+        shooterB = hardwareMap.get(DcMotorEx.class,"shooterB");
+        shooterB.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooterB.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        PIDFCoefficients pidfCoefficients1 = new PIDFCoefficients(P,0,0,F);
+        shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
+        telemetry.addLine("init complete");
+
         Intake = hardwareMap.get(DcMotorEx.class, "intake");
+
+        arm = hardwareMap.get(Servo.class, "arm");
+        arm.setPosition(0);
+
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
@@ -153,18 +182,18 @@ public class goodRevolver2 extends OpMode {
         telemetry.addData("pose1",revpose);
 
 
-        if (gamepad1.xWasPressed()) {
-            if (target == 0) {
+        if (gamepad2.xWasPressed()) {
+            if (target == 0|| target == 144 || target == 240) {
                 target = intake;
             } else if (target == 96) {
-               target = 192;
+                target = 192;
             } else {
-             target = home;
+                target = home;
             }
         }
 
-        if (gamepad1.yWasPressed()) {
-            if (target == 0) {
+        if (gamepad2.yWasPressed()) {
+            if (target == 0|| target == 96 || target == 192) {
                 target = 144;
             } else if (target == 144) {
                 target = 240;
@@ -174,21 +203,39 @@ public class goodRevolver2 extends OpMode {
             }
         }
 
-        if (gamepad1.dpadLeftWasPressed()) Intake.setPower(1);
-        if (gamepad1.dpadRightWasPressed())Intake.setPower(0);
+        if (gamepad2.dpadLeftWasPressed()) Intake.setPower(1);
+        if (gamepad2.dpadRightWasPressed())Intake.setPower(0);
 
-
-
-/*
-        if (gamepad1.dpadUpWasPressed()) {
-            intake.setPower(1);
+        if (gamepad2.dpadUpWasPressed()) {
+            arm.setPosition(0.3);
+            arm.setPosition(0);
         }
 
-        if (gamepad1.dpadUpWasPressed()) {
-            intake.setPower(0);
+
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
+        PIDFCoefficients pidfCoefficients1 = new PIDFCoefficients(P,0, 0, F);
+        shooterT.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
+
+
+        if (gamepad2.right_bumper) {
+
+                shooterT.setVelocity(curTargetVelocity);
+                shooterB.setVelocity(curTargetVelocity);
+            }
+
+        if (gamepad2.left_bumper){
+                shooterT.setVelocity(LowVelocityShot);
+                shooterB.setVelocity(LowVelocityShot);
+            }
+
+        if (gamepad2.b){
+            shooterT.setVelocity(0);
+            shooterB.setVelocity(0);
         }
 
- */
+
+
         updateTelemetry();
 
 
@@ -204,30 +251,61 @@ public class goodRevolver2 extends OpMode {
     private void runTurretLogic() {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         limelight.updateRobotOrientation(orientation.getYaw());
-
         LLResult llResult = limelight.getLatestResult();
 
+        double power = 0;
+        boolean specificTargetVisible = false;
+
+        // Check if we see valid targets
         if (llResult != null && llResult.isValid()) {
-            double TX = llResult.getTx();
-            double power = calculatePID(TX);
+            List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
 
-            // Safety Limits check
-            int currentPos = leftFront.getCurrentPosition();
-            if (Limits) {
-                if (currentPos >= Maxpo && power > 0){
-                    power = 0;
+
+            if (lockedTargetID == -1) {
+                if (!fiducialResults.isEmpty()) {
+
+                    lockedTargetID = fiducialResults.get(0).getFiducialId();
+                    status = "LOCKED onto ID: " + lockedTargetID;
                 }
-
-                else if (currentPos <= MinPo && power < 0){
-                    power = 0;
-                };
             }
 
+
+            if (lockedTargetID != -1) {
+                for (LLResultTypes.FiducialResult fr : fiducialResults) {
+                    if (fr.getFiducialId() == lockedTargetID) {
+                        if (fr.getFiducialId() == 20 || fr.getFiducialId() == 24) {
+                            double TX = fr.getTargetXDegrees();
+                            power = calculatePID(TX);
+                            specificTargetVisible = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        if (specificTargetVisible) {
+
+            if (Limits) {
+
+                int currentPos = leftFront.getCurrentPosition();
+                if (currentPos >= Maxpo && power > 0) {
+                    power = 0;
+                } else if (currentPos <= MinPo && power < 0) {
+                    power = 0;
+                }
+            }
             turretServo.setPower(power);
-            status = "Tracking Target " + TARGET_ID;
+            status = "Tracking ID " + lockedTargetID;
         } else {
+
             turretServo.setPower(0);
-            status = "Searching...";
+            if (lockedTargetID != -1) {
+                status = "Searching for ID " + lockedTargetID + "...";
+            } else {
+                status = "Waiting for any target...";
+            }
         }
     }
     public void DriveInit() {

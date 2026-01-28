@@ -93,7 +93,8 @@ public final class BackR2 extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
-                .strafeToLinearHeading(new Vector2d(21.9, 34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+
+                .strafeToLinearHeading(new Vector2d(21.9, 34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)//THis part
                 .afterTime(first,Revolver.setTarget(96))
                 .afterTime(second,Revolver.setTarget(192))
                 .afterTime(2.4,new Intake(intake, 0))

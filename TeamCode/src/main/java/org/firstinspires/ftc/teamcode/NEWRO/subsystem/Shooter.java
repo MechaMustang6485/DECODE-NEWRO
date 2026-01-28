@@ -25,7 +25,7 @@ public class Shooter {
 
     // Default Velocity targets
     public static double HIGH_VELOCITY = 5000;
-    public static double LOW_VELOCITY = 4300;
+    public static double LOW_VELOCITY = 4000;
 
     public Shooter(HardwareMap hardwareMap) {
         // Initialize motors using your specific mapping

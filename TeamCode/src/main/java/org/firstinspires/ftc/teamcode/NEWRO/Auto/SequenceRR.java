@@ -64,8 +64,6 @@ public class SequenceRR extends LinearOpMode {
 
                         // Foreground: scan then run sequence(s)
                         new SequentialAction(
-                                // Scan once to store the pattern
-                                seq.scanLimelightPattern(),
 
                                 // Optional pause
                                 new SleepAction(AFTER_SCAN_WAIT_SEC),
@@ -85,7 +83,7 @@ public class SequenceRR extends LinearOpMode {
             chain = new SequentialAction(
                     chain,
                     new DebugPacketAction("SequenceRun", i + 1),
-                    seq.runSequence()
+                    seq.runSequence3ShotsNoShooter()
             );
         }
 

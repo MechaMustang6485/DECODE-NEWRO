@@ -29,7 +29,7 @@ public class TouchRev2 {
 
     public TouchRev2(HardwareMap hardwareMap) {
         revolver = hardwareMap.get(DcMotorEx.class, "revolver");
-        touchSensor = hardwareMap.get(TouchSensor.class, "touchSensor");
+        touchSensor = hardwareMap.get(TouchSensor.class, "touch");
 
         revolver.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         revolver.setDirection(DcMotorEx.Direction.FORWARD);

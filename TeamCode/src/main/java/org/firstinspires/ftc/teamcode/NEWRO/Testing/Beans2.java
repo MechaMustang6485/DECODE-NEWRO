@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.NEWRO.Testing;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.arcrobotics.ftclib.controller.PIDFController;
+import com.arcrobotics.ftclib.hardware.motors.Motor;
+import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -17,19 +19,20 @@ public class Beans2 extends OpMode {
     public DcMotorEx Beans;
     public DcMotorEx Beans2;
     private Servo arm;
+    private DcMotor Intake;
 
 //    private Servo arm;
 //    private double armup = 0.15;
 //    private double armdown = 0;
 
-    public double highVelocity =1500;
+    public double highVelocity =6000;
     public double lowVelocity = 900;
 
     double curTargetVelocity = highVelocity;
 
-    public static double F = 18;
+    public static double F = 0;
 
-    public static double P = 2;
+    public static double P = 0;
 
     double[] stepSizes = {10.0, 1.0, 0.1, 0.001, 0.0001};
 
@@ -65,6 +68,8 @@ public class Beans2 extends OpMode {
 
         arm = hardwareMap.get(Servo.class, "arm");
         arm.setPosition(0);
+
+        Intake = hardwareMap.get(DcMotor.class, "intake");
     }
 
 
@@ -96,12 +101,24 @@ public class Beans2 extends OpMode {
             P += stepSizes[stepIndex];
         }
 
-        if (gamepad2.dpadUpWasPressed()) {
+        if (gamepad1.xWasPressed()) {
             arm.setPosition(0.3);
         }
 
-        if (gamepad2.dpadDownWasPressed()) {
+        if (gamepad1.aWasPressed()) {
             arm.setPosition(0);
+        }
+
+        if (gamepad1.right_bumper) {
+            Intake.setPower(1);
+        }
+
+        if (gamepad1.right_trigger_pressed) {
+            Intake.setPower(0);
+        }
+
+        if (gamepad1.left_bumper) {
+            Intake.setPower(-1);
         }
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
