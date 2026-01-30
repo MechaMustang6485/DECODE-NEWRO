@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.NEWRO.subsystem;
 
-
-
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -13,21 +11,23 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
+
+
 @Config
-public class Shooter {
+public class Shooter2 {
 
     // Hardware
     private DcMotorEx shooterT, shooterB;
 
     // Tuning Constants (Static so Dashboard sees them)
     public static double p = 3, i = 0, d = 0;
-    public static double f = 3.6;
+    public static double f = 3.1;
 
     // Default Velocity targets
     public static double HIGH_VELOCITY = 4500;
-    public static double LOW_VELOCITY = 0;
+    public static double LOW_VELOCITY = 4000;
 
-    public Shooter(HardwareMap hardwareMap) {
+    public Shooter2(HardwareMap hardwareMap) {
         // Initialize motors using your specific mapping
         // Note: Preserving your swap (shooterB variable -> "shooterT" config)
         shooterB = hardwareMap.get(DcMotorEx.class, "shooterT");
@@ -88,3 +88,4 @@ public class Shooter {
         }
     }
 }
+

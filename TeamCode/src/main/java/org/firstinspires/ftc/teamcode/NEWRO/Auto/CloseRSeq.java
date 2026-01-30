@@ -33,12 +33,12 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 
 @Config
 @Autonomous
-public final class CloseBSeq extends LinearOpMode {
-    public static double first = 0.5;
-    public static double second = 1;
+public final class CloseRSeq extends LinearOpMode {
+    public static double first = 1.5;
+    public static double second = 2;
     public static int line = -30;
 
-    public  double pshot = 7.3013, ishot = 0, dshot = 0;
+    public double pshot = 7.3013, ishot = 0, dshot = 0;
     public static double fshot = 2.47;
     public static double HighVelocityShot = 3125;
     public double LowVelocityShot = 900;
@@ -49,7 +49,8 @@ public final class CloseBSeq extends LinearOpMode {
     public void initHardware() {
         intitShooter();
     }
-    public void intitShooter(){
+
+    public void intitShooter() {
         DcMotorEx shooterB = hardwareMap.get(DcMotorEx.class, "shooterT");
         shooterB.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooterB.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -59,6 +60,7 @@ public final class CloseBSeq extends LinearOpMode {
         shooterT.setDirection(DcMotorSimple.Direction.REVERSE);
 
     }
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -75,36 +77,27 @@ public final class CloseBSeq extends LinearOpMode {
 
         TrajectoryActionBuilder move = drive.actionBuilder(new Pose2d(0, 0, 0))
 
-                .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
-                .strafeToLinearHeading(new Vector2d(-69.73, 8.64), Math.toRadians(-44), (pose2dDual, posePath, v) -> 82)
+                .stopAndAdd(new Shooter(shooterB, shooterT, curTargetVelocity))
+                .strafeToLinearHeading(new Vector2d(-61.73, -16.7), Math.toRadians(62.7), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(seq.scanLimelightPattern())
-                .strafeToLinearHeading(new Vector2d(-64.66, 14.86), Math.toRadians(-5), (pose2dDual, posePath, v) -> 82)
+                .strafeToLinearHeading(new Vector2d(-58.2, -14.3), Math.toRadians(18.7), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
                 .stopAndAdd(seq.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
-                .strafeToLinearHeading(new Vector2d(-44.32, 36), Math.toRadians(38),(pose2dDual, posePath, v) -> 82)
+                .strafeToLinearHeading(new Vector2d(-63.067, -25.564), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
 
-                .afterTime(first,seq.setTarget(96))
-                .afterTime(second,seq.setTarget(192))
-                .lineToX(-40)
-                .waitSeconds(0.3)
-                .lineToX(-30)
-                .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
-                .strafeToLinearHeading(new Vector2d(-61.89, 15.29), Math.toRadians(2), (pose2dDual, posePath, v) -> 82)
-                .waitSeconds(0.4)
+                .afterTime(first, seq.setTarget(96))
+                .afterTime(second, seq.setTarget(192))
+                .strafeToLinearHeading(new Vector2d(-35.9, -52.0), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
+                .waitSeconds(0.1)
+                .stopAndAdd(new Shooter(shooterB, shooterT, curTargetVelocity))
+                .strafeToLinearHeading(new Vector2d( -58.2, -15.0), Math.toRadians(17.8), (pose2dDual, posePath, v) -> 82)
+
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
+                .strafeToLinearHeading(new Vector2d( -81.4, -25.4), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(new Shooter(shooterB, shooterT, 0))
+                ;
 
-                .stopAndAdd(seq.setTarget(0))
-                .stopAndAdd(new Intake(intake, 1))
-                .strafeToLinearHeading(new Vector2d(-74.51, 50), Math.toRadians(39), (pose2dDual, posePath, v) -> 82)
-                .afterTime(first,seq.setTarget(96))
-                .afterTime(second,seq.setTarget(192))
-                .stopAndAdd(new Intake(intake, 0));
-                //.stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
-                //.strafeToLinearHeading(new Vector2d(-65.33, 14.90), Math.toRadians(-6), (pose2dDual, posePath, v) -> 82)
-                //.stopAndAdd(seq.runSequence3ShotsNoShooter())
-                //.strafeToLinearHeading(new Vector2d(-64.16, 34.42), Math.toRadians(-5), (pose2dDual, posePath, v) -> 82);
 
 
         if (isStopRequested()) {
@@ -115,13 +108,14 @@ public final class CloseBSeq extends LinearOpMode {
                 new ParallelAction(
                         move.build(),
                         seq.updatePID()
-        )
+                )
         );
-}
+    }
+
     public class Intake implements Action {
         private boolean initialized = false;//don't touch
         ElapsedTime timer;
-      DcMotor intake;
+        DcMotor intake;
         double power;
 
 
@@ -136,7 +130,7 @@ public final class CloseBSeq extends LinearOpMode {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (!initialized) {
                 timer = new ElapsedTime();
-               intake.setPower(power);
+                intake.setPower(power);
                 initialized = true;
             }
             return timer.seconds() < 0.1;//don't touch
@@ -144,6 +138,7 @@ public final class CloseBSeq extends LinearOpMode {
 
 
     }
+
     public class Shooter implements Action {
         private boolean initialized = false;//don't touch
         ElapsedTime timer;
@@ -152,7 +147,7 @@ public final class CloseBSeq extends LinearOpMode {
         double power;
 
 
-        public Shooter(DcMotorEx b,DcMotorEx t, double w) {
+        public Shooter(DcMotorEx b, DcMotorEx t, double w) {
             this.shooterB = b;
             this.shooterT = t;
             this.power = w;
@@ -173,10 +168,7 @@ public final class CloseBSeq extends LinearOpMode {
             }
             return timer.seconds() < 0.1;//don't touch
         }
-
-
     }
-
 }
 
 

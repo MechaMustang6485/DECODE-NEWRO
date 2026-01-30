@@ -19,75 +19,72 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
-
 
 @Config//important
 @TeleOp
 public class DecodeDrive extends OpMode {
     private PIDFController controller;//important
 
-//revolver tuning
     public static double p = 0.1, i = 0, d= 0.0002;
     public static double f = 0.0001 ;
+
     private static final int home = 0;
+
     public static int target = home;//this number can be used for the shoot position.
+
     public static int intake = 96;
+
     public static int shoot = 48;
-    private final double ticks_in_degree = 700/ 180.0;//changes depending on the motor
 
+    public static double ARM_UP = 0.3, ARM_DOWN = 0.0;
+    private ElapsedTime armTimer = new ElapsedTime();
+    private boolean armMovingAuto = false;
 
-    //Shooter tunig
-    //public static double pshot = 7.3013, ishot = 0, dshot = 0;
-    //public static double fshot = 10;
-    public static double HighVelocityShot = 6000;
-    public static double LowVelocityShot = 900;
+    public static double HighVelocityShot = 3800;
+    public static double LowVelocityShot = 3100;
     public double curTargetVelocity = HighVelocityShot;
-     //This shooter tuning was wrong
     public static double F = 4.5;
     public static double P = 4;
 
+    private final double ticks_in_degree = 700/ 180.0;//changes depending on the motor
+
     private DcMotorEx Revolver;
     private CRServo turretServo;
+    private Servo arm;
+    private DcMotorEx shooterT;
+    private DcMotorEx shooterB;
     private Limelight3A limelight;
     private IMU imu;
     private DcMotorEx Intake;
+    private GoBildaPinpointDriver pinpoint;
+    private TouchSensor touch;
+
     private DcMotor leftFront;
     private DcMotor rightFront;
     private DcMotor rightBack;
     private DcMotor leftBack;
-    private Servo arm;
-    private DcMotorEx shooterT;
-    private DcMotorEx shooterB;
-    private GoBildaPinpointDriver pinpoint;
+
+    private int lockedTargetID = -1;
 
 
-    public static double driveTrainPower = 0.8;
-
-//distance tuning
-    public static double angleDegree = 0.49;//robot specific
-    public static double lensHight = 13.5;//robot specific
-    public static double goalHight  = 9;//allways use
-    public static double Dvalue = 9;
-    public static double Tvalue = 9;
-
-    //turret Tuning
     public static int Pollher = 100;
+
+
     public static int TARGET_ID = 24;
     public static double Lp = 0.02;
     public static double Ld = 0.002;
     public static double MaxPower = 0.5;
     public static double MinPower = 0.05;
     public static double Tolerance = 0.5;
-    private int lockedTargetID = -1;
 
     // Safety Limits
     public static boolean Limits = true;
@@ -122,14 +119,8 @@ public class DecodeDrive extends OpMode {
         turretServo = hardwareMap.get(CRServo.class, "Turret");
         turretServo.setDirection(CRServo.Direction.REVERSE);
 
-
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
-        configurePinpoint();
-
-
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.setPollRateHz(100);
+        limelight.setPollRateHz(Pollher);
         limelight.pipelineSwitch(0);
 
         leftFront = hardwareMap.get(DcMotor.class, "Fl");
@@ -160,13 +151,16 @@ public class DecodeDrive extends OpMode {
         shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
         telemetry.addLine("init complete");
 
-
         Intake = hardwareMap.get(DcMotorEx.class, "intake");
 
         arm = hardwareMap.get(Servo.class, "arm");
         arm.setPosition(0);
 
+        touch = hardwareMap.get(TouchSensor.class, "touch");
 
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
+        configurePinpoint();
         status = "Initialized";
     }
 
@@ -178,20 +172,8 @@ public class DecodeDrive extends OpMode {
 
     @Override
     public void loop(){
-        DriveInit();
         runTurretLogic();
-        Controls();
-        distanceLogic();
-        updateTelemetry();
-    }
-
-
-    @Override
-    public void stop() {
-        limelight.stop();
-    }
-
-    public void Controls(){
+        DriveInit();
 
 
         controller.setPIDF(p, i, d, f);
@@ -204,9 +186,10 @@ public class DecodeDrive extends OpMode {
         double power = pid + ff;//math that sets the power
         Revolver.setPower(power);
         telemetry.addData("pose1",revpose);
+        boolean pressed = touch.isPressed();
 
-        if (gamepad1.xWasPressed()) {
-            if (target == 0) {
+        if (gamepad2.xWasPressed()) {
+            if (target == 0|| target == 144 || target == 240) {
                 target = intake;
             } else if (target == 96) {
                 target = 192;
@@ -214,9 +197,22 @@ public class DecodeDrive extends OpMode {
                 target = home;
             }
         }
+        /*
+        if (gamepad1.dpad_left) {
+            Revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        }
 
-        if (gamepad1.yWasPressed()) {
-            if (target == 0) {
+        if (gamepad1.dpad_right) {
+            Revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        }
+
+
+         */
+
+
+
+        if (gamepad2.yWasPressed()) {
+            if (target == 0|| target == 96 || target == 192 || target == 48) {
                 target = 144;
             } else if (target == 144) {
                 target = 240;
@@ -225,153 +221,72 @@ public class DecodeDrive extends OpMode {
                 target = shoot;
             }
         }
-
-        if (gamepad1.dpadLeftWasPressed()) Intake.setPower(1);
-        if (gamepad1.dpadRightWasPressed())Intake.setPower(0);
-
-
-        if (gamepad1.dpadUpWasPressed()) {
-            arm.setPosition(0.3);
+        if (gamepad1.a) {
+            curTargetVelocity = 4000;
         }
 
-        if (gamepad1.dpadDownWasPressed()) {
-            arm.setPosition(0);
+        if (gamepad1.y) {
+            curTargetVelocity = 3500;
+        }
+
+        if (gamepad2.dpadLeftWasPressed()) Intake.setPower(1);
+        if (gamepad2.dpadRightWasPressed())Intake.setPower(0);
+
+        if (gamepad2.right_trigger >= 1) {
+            Intake.setPower(-1);
+        }
+        if (gamepad2.dpadUpWasPressed()) {
+            armMovingAuto = true;
+            armTimer.reset();
+        }
+
+        if (armMovingAuto) {
+            if (armTimer.seconds() < 0.4) {
+                arm.setPosition(ARM_UP);
+            } else if (armTimer.seconds() < 0.8) {
+                arm.setPosition(ARM_DOWN);
+            } else {
+                armMovingAuto = false;
+            }
         }
 
 
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
+        PIDFCoefficients pidfCoefficients1 = new PIDFCoefficients(P,0, 0, F);
+        shooterT.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
+
+
+        if (gamepad2.right_bumper) {
+
+                shooterT.setVelocity(curTargetVelocity);
+                shooterB.setVelocity(curTargetVelocity);
+            }
+
+        if (gamepad2.left_bumper){
+                shooterT.setVelocity(LowVelocityShot);
+                shooterB.setVelocity(LowVelocityShot);
+            }
+
+        if (gamepad2.b){
+            shooterT.setVelocity(0);
+            shooterB.setVelocity(0);
+        }
+
+
+
+        updateTelemetry();
 
 
     }
-private void distanceLogic(){
-    YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-    limelight.updateRobotOrientation(orientation.getYaw());
-    LLResult llResult = limelight.getLatestResult();
-    if (llResult != null && llResult.isValid()) {
-        Pose3D botPose = llResult.getBotpose_MT2();
-        telemetry.addData("Tx", llResult.getTx());
-        telemetry.addData("Ty", llResult.getTy());
-        telemetry.addData("Ta", llResult.getTa());
 
-    }
 
-    double Y = llResult.getTy();
-    double limelightMountAngleDegrees = angleDegree;//how angled it is
-
-    // distance from the center of the Limelight lens to the floor
-    double limelightLensHeightInches = lensHight;
-
-    // distance from the target to the floor
-    double goalHeightInches = goalHight;
-
-    //more math that i don't under stand that is grade 12 level
-    double angleToGoalDegrees = limelightMountAngleDegrees + Y;
-    double angleToGoalRadians = angleToGoalDegrees * (3.14159 / 180.0);
-
-    //calculate distance
-    double distance = (goalHeightInches - limelightLensHeightInches) / Math.tan(angleToGoalRadians);//make sure the code is using math tan
-
-    PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
-    PIDFCoefficients pidfCoefficients1 = new PIDFCoefficients(P,0, 0, F);
-    shooterT.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
-    shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
-
-    if (gamepad1.right_bumper) {
-        if (distance >= 80) {
-            shooterT.setVelocity(P);
-            shooterB.setVelocity(P);
-        }
-
-        if (distance <= 68) {
-            shooterT.setVelocity(F);
-            shooterB.setVelocity(F);
-        }
-
-        telemetry.addData("Distance",distance);
+    @Override
+    public void stop() {
+        limelight.stop();
     }
 
 
-
-}
-
-    public void DriveInit() {
-        /*
-        double leftJoyStickXAxis = gamepad1.left_stick_x * 1.1; //1.1 use to counteract imperfect strafing
-        double leftJoyStickYAxis = -gamepad1.left_stick_y; //y stick value is reversed
-        double rightJoyStickXAxis = gamepad1.right_stick_x;
-        double botOrientation = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-
-        // Rotate the movement direction counter to the bot's rotation
-        double rotateX = leftJoyStickXAxis * Math.cos(-botOrientation) - leftJoyStickYAxis * Math.sin(-botOrientation);
-        double rotateY = leftJoyStickXAxis * Math.sin(-botOrientation) + leftJoyStickYAxis * Math.cos(-botOrientation);
-
-        rotateX = rotateX * 1.1;  // Counteract imperfect strafing
-        // Denominator is the largest motor power (absolute value) or 1
-        // This ensures all the powers maintain the same ratio,
-        // but only if at least one is out of the range [-1, 1]
-        double denominator = Math.max(Math.abs(leftJoyStickYAxis) + Math.abs(leftJoyStickXAxis) + Math.abs(rightJoyStickXAxis), 1);
-        double frontLeftMotorPower = (rotateY + rotateX + rightJoyStickXAxis) / denominator;
-        double backLeftMotorPower = (rotateY - rotateX + rightJoyStickXAxis) / denominator;
-        double frontRightMotorPower = (rotateY - rotateX - rightJoyStickXAxis) / denominator;
-        double backRightMotorPower = (rotateY + rotateX - rightJoyStickXAxis) / denominator;
-
-        //Set motor power
-        leftFront.setPower(frontLeftMotorPower * driveTrainPower);
-        leftBack.setPower(backLeftMotorPower * driveTrainPower);
-        rightBack.setPower(backRightMotorPower * driveTrainPower);
-        rightFront.setPower(frontRightMotorPower * driveTrainPower);
-
-
-        //IMU Reset
-        if (gamepad1.back) {
-            imu.resetYaw();
-        }
-         */
-        pinpoint.update();
-        if (gamepad1.back) {
-            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
-            telemetry.addData("IMU Status", "Yaw Reset Initiated!");
-        }
-
-
-
-        double botHeading = pinpoint.getHeading(AngleUnit.RADIANS);
-
-
-        double y_input = -gamepad1.left_stick_y;
-        double x_input = gamepad1.left_stick_x * 1.1;
-        double rotation_input = gamepad1.right_stick_x;
-
-
-        double rotX = x_input * Math.cos(-botHeading) - y_input * Math.sin(-botHeading);
-        double rotY = x_input * Math.sin(-botHeading) + y_input * Math.cos(-botHeading);
-
-
-        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rotation_input), 1);
-
-        double frontLeftPower = (rotY + rotX + rotation_input) / denominator;
-        double backLeftPower = (rotY - rotX + rotation_input) / denominator;
-        double frontRightPower = (rotY - rotX - rotation_input) / denominator;
-        double backRightPower = (rotY + rotX - rotation_input) / denominator;
-
-        leftFront.setPower(frontLeftPower);
-        leftBack.setPower(backLeftPower);
-        rightFront.setPower(frontRightPower);
-        rightBack.setPower(backRightPower);
-
-        Pose2D pose2D = pinpoint.getPosition();
-    }
-    public void configurePinpoint(){
-
-        pinpoint.setOffsets(76.2, 127, DistanceUnit.MM); //these are tuned for 3110-0002-0001 Product Insight #1
-
-        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-
-
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED,
-                GoBildaPinpointDriver.EncoderDirection.REVERSED);
-
-        pinpoint.resetPosAndIMU();
-    }
     private void runTurretLogic() {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         limelight.updateRobotOrientation(orientation.getYaw());
@@ -388,7 +303,7 @@ private void distanceLogic(){
             if (lockedTargetID == -1) {
                 if (!fiducialResults.isEmpty()) {
 
-                    lockedTargetID = (int) fiducialResults.get(0).getFiducialId();
+                    lockedTargetID = fiducialResults.get(0).getFiducialId();
                     status = "LOCKED onto ID: " + lockedTargetID;
                 }
             }
@@ -432,6 +347,55 @@ private void distanceLogic(){
             }
         }
     }
+    public void DriveInit() {
+
+        pinpoint.update();
+        if (gamepad1.back) {
+            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
+            telemetry.addData("IMU Status", "Yaw Reset Initiated!");
+        }
+
+
+
+        double botHeading = pinpoint.getHeading(AngleUnit.RADIANS);
+
+
+        double y_input = -gamepad1.left_stick_y;
+        double x_input = gamepad1.left_stick_x * 1.1;
+        double rotation_input = gamepad1.right_stick_x;
+
+
+        double rotX = x_input * Math.cos(-botHeading) - y_input * Math.sin(-botHeading);
+        double rotY = x_input * Math.sin(-botHeading) + y_input * Math.cos(-botHeading);
+
+
+        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rotation_input), 1);
+
+        double frontLeftPower = (rotY + rotX + rotation_input) / denominator;
+        double backLeftPower = (rotY - rotX + rotation_input) / denominator;
+        double frontRightPower = (rotY - rotX - rotation_input) / denominator;
+        double backRightPower = (rotY + rotX - rotation_input) / denominator;
+
+        leftFront.setPower(frontLeftPower);
+        leftBack.setPower(backLeftPower);
+        rightFront.setPower(frontRightPower);
+        rightBack.setPower(backRightPower);
+
+        Pose2D pose2D = pinpoint.getPosition();
+    }
+
+    public void configurePinpoint(){
+
+        pinpoint.setOffsets(76.2, 127, DistanceUnit.MM); //these are tuned for 3110-0002-0001 Product Insight #1
+
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+
+
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED,
+                GoBildaPinpointDriver.EncoderDirection.REVERSED);
+
+        pinpoint.resetPosAndIMU();
+    }
 
     private double calculatePID(double error) {
         double deltaTime = pidTimer.seconds();
@@ -461,8 +425,6 @@ private void distanceLogic(){
         telemetry.addData("Turret Pos", leftFront.getCurrentPosition());
         telemetry.addData("Turret Power", turretServo.getPower());
         telemetry.addData("Target",target);
-        telemetry.addData("Velocity",shooterB.getVelocity());
-        telemetry.addData("Velocity2",shooterT.getVelocity());
         telemetry.update();
     }
 }

@@ -14,6 +14,7 @@ import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -28,7 +29,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 
-
+@Disabled
 @Config
 @Autonomous
 public final class CloseB extends LinearOpMode {
@@ -74,7 +75,7 @@ public final class CloseB extends LinearOpMode {
         DcMotorEx shooterB = hardwareMap.get(DcMotorEx.class, "shooterT");
         DcMotorEx shooterT = hardwareMap.get(DcMotorEx.class, "shooterB");
         DcMotor intake = hardwareMap.get(DcMotorEx.class, "intake");
-        TouchSensorRR touch = new TouchSensorRR(hardwareMap);
+
 
 
 
@@ -86,7 +87,6 @@ public final class CloseB extends LinearOpMode {
 
                 .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
                 .strafeToLinearHeading(new Vector2d(-59.87, 8.1), Math.toRadians(0), (pose2dDual, posePath, v) -> 42)
-                .waitSeconds(10)
                 .stopAndAdd(Revolver.setTarget(48))
                 .waitSeconds(0.3)
                 .stopAndAdd(new armAction(arm,0.3))

@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -12,6 +13,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
+@Disabled
 @Config
 @TeleOp
 public class Beans2 extends OpMode {
@@ -25,7 +27,7 @@ public class Beans2 extends OpMode {
 //    private double armup = 0.15;
 //    private double armdown = 0;
 
-    public double highVelocity =6000;
+    public double highVelocity =4500;
     public double lowVelocity = 900;
 
     double curTargetVelocity = highVelocity;

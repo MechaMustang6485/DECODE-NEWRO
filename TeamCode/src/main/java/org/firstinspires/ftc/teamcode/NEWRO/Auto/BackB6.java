@@ -25,12 +25,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
 
 
 @Config
 @Autonomous
-public final class BackB2 extends LinearOpMode {
+public final class BackB6 extends LinearOpMode {
 
     public static int first = 1;
     public static int second = 2;
@@ -38,6 +37,7 @@ public final class BackB2 extends LinearOpMode {
     public void initHardware() {
         initArmOne();
         shooter();
+        initTurret();
     }
 
     public void initArmOne() {
@@ -70,6 +70,7 @@ public final class BackB2 extends LinearOpMode {
         TouchRev2 Revolver = new TouchRev2(hardwareMap);
         Servo arm = hardwareMap.get(Servo.class, "arm");
         DcMotor intake = hardwareMap.get(DcMotorEx.class, "intake");
+        CRServo turret = hardwareMap.get(CRServo.class, "Turret");
         Shooter shooter = new Shooter(hardwareMap);
 
 
@@ -77,6 +78,9 @@ public final class BackB2 extends LinearOpMode {
         waitForStart();
 
         TrajectoryActionBuilder move = drive.actionBuilder(new Pose2d(0, 0, 0))
+                //shooting #1
+               // .waitSeconds(10)
+                .stopAndAdd(new Turret(turret,0.000001))
                 .stopAndAdd(shooter.spinUp(Shooter.HIGH_VELOCITY))
                 .waitSeconds(2)
                 .stopAndAdd(Revolver.setTarget(48))
@@ -93,14 +97,14 @@ public final class BackB2 extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
+                //spike line #1
                 .strafeToLinearHeading(new Vector2d(21.9, -34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .afterTime(first,Revolver.setTarget(96))
                 .afterTime(second,Revolver.setTarget(192))
                 .strafeToLinearHeading(new Vector2d(73, -34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
-                .waitSeconds(0.5)
                 .strafeToLinearHeading(new Vector2d(10, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .stopAndAdd(new Intake(intake, 0))
-
+                //shooting #2
                 .stopAndAdd(Revolver.setTarget(0))
                 .waitSeconds(0.3)
                 .stopAndAdd(Revolver.setTarget(48))
@@ -116,7 +120,12 @@ public final class BackB2 extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
                 .waitSeconds(1)
+                .strafeToLinearHeading(new Vector2d(50, -10), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
+                .stopAndAdd(Revolver.setTarget(0))
+                .stopAndAdd(shooter.spinUp(Shooter.LOW_VELOCITY))
 
+                //spike line #2
+                /*
                 .stopAndAdd(new Intake(intake, 1))
                 .stopAndAdd(Revolver.setTarget(0))
                 .strafeToLinearHeading(new Vector2d(74, -16), Math.toRadians(0), (pose2dDual, posePath, v) -> 40)
@@ -130,7 +139,8 @@ public final class BackB2 extends LinearOpMode {
                 .stopAndAdd(Revolver.setTarget(192))
                 .lineToX(85)
                 .waitSeconds(0.5)
-                .lineToX(25)
+                .lineToX(35)
+                //shooting #3
                 .stopAndAdd(Revolver.setTarget(0))
                 .waitSeconds(0.3)
                 .stopAndAdd(Revolver.setTarget(48))
@@ -145,7 +155,9 @@ public final class BackB2 extends LinearOpMode {
                 .waitSeconds(0.5)
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
-                .waitSeconds(1);
+                .waitSeconds(1)
+                 */
+        ;
 
 
 
@@ -229,17 +241,16 @@ public final class BackB2 extends LinearOpMode {
             return timer.seconds() < 0.1;//don't touch
         }
     }
-    public class turret implements Action {
+    public class Turret implements Action {
         private boolean initialized = false;
         ElapsedTime timer;
-        double seconds;
         CRServo turret;
         double power;
 
-        public turret(CRServo s, double power, double seconds) {
+        public Turret(CRServo s, double power) {
             this.turret = s;
             this.power = power;
-            this.seconds = seconds;
+
         }
 
         @Override

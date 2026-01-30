@@ -10,6 +10,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -19,6 +20,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -28,6 +30,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
+@Disabled
 @Config//important
 @TeleOp
 public class GamepadeOverrideTest extends OpMode {
@@ -86,6 +89,17 @@ public class GamepadeOverrideTest extends OpMode {
     public static int MinPo = -11000;
     public static int Maxpo = 3600;
 
+    final int TICKS_PER_SLOT = 96;
+    final int MAX_BALLS = 3;
+    final int SHOOT_POS = 48;
+
+    // state
+    int ballCount = 0;
+    boolean lastTouch = false;
+    boolean touchEnabled = true;
+
+    private TouchSensor touch;
+
 
     private double lastError = 0;
     private ElapsedTime pidTimer = new ElapsedTime();
@@ -95,6 +109,8 @@ public class GamepadeOverrideTest extends OpMode {
     @Override
     public void init(){
         controller = new PIDController(p, i, d);
+
+        touch = hardwareMap.get(TouchSensor.class, "touch");
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());//allow to do stuff in dash board
         Revolver = hardwareMap.get(DcMotorEx.class,"revolver");
@@ -162,6 +178,34 @@ public class GamepadeOverrideTest extends OpMode {
     public void start() {
         limelight.start();
         pidTimer.reset();
+    }
+
+    // call this every loop (TeleOp or RR Action loop)
+    void handleTouchIndexing(DcMotorEx revolver, TouchSensor touch, DcMotor intake) {
+
+        if (!touchEnabled) return;
+
+        boolean pressed = touch.isPressed();
+
+        // edge detect
+        if (pressed && !lastTouch) {
+            ballCount++;
+
+            if (ballCount < MAX_BALLS) {
+                // move to next intake slot
+                int target = ballCount * TICKS_PER_SLOT;
+                revolver.setTargetPosition(target); // or your PID target variable
+            } else {
+                // reached 3 balls
+                touchEnabled = false;
+                intake.setPower(0);
+
+                // go to shoot position
+                revolver.setTargetPosition(SHOOT_POS);
+            }
+        }
+
+        lastTouch = pressed;
     }
 
     @Override
@@ -232,6 +276,8 @@ public class GamepadeOverrideTest extends OpMode {
         if (gamepad2.b){
             shooterT.setVelocity(0);
             shooterB.setVelocity(0);
+            ballCount = 0;
+            touchEnabled = false;
         }
 
 

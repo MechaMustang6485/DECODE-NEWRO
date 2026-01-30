@@ -28,6 +28,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.R;
 
+@Disabled
 @Config//important
 @TeleOp
 public class goodRevolver2 extends OpMode {
