@@ -40,7 +40,7 @@ public final class CloseBSeq extends LinearOpMode {
 
     public  double pshot = 7.3013, ishot = 0, dshot = 0;
     public static double fshot = 2.47;
-    public static double HighVelocityShot = 3125;
+    public static double HighVelocityShot = 3120;
     public double LowVelocityShot = 900;
     public double curTargetVelocity = HighVelocityShot;
 
