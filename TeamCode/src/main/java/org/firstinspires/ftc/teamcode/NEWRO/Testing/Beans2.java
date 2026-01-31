@@ -12,8 +12,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Disabled
+
 @Config
 @TeleOp
 public class Beans2 extends OpMode {
@@ -27,14 +28,17 @@ public class Beans2 extends OpMode {
 //    private double armup = 0.15;
 //    private double armdown = 0;
 
-    public double highVelocity =4500;
+    public double highVelocity =1500;
     public double lowVelocity = 900;
 
     double curTargetVelocity = highVelocity;
+    public static double ARM_UP = 0.3, ARM_DOWN = 0.0;
+    private ElapsedTime armTimer = new ElapsedTime();
+    private boolean armMovingAuto = false;
 
-    public static double F = 0;
+    public static double F = 17.5;
 
-    public static double P = 0;
+    public static double P = 13;
 
     double[] stepSizes = {10.0, 1.0, 0.1, 0.001, 0.0001};
 
@@ -102,14 +106,21 @@ public class Beans2 extends OpMode {
         if (gamepad1.dpadUpWasPressed()) {
             P += stepSizes[stepIndex];
         }
-
         if (gamepad1.xWasPressed()) {
-            arm.setPosition(0.3);
+            armMovingAuto = true;
+            armTimer.reset();
         }
 
-        if (gamepad1.aWasPressed()) {
-            arm.setPosition(0);
+        if (armMovingAuto) {
+            if (armTimer.seconds() < 0.4) {
+                arm.setPosition(ARM_UP);
+            } else if (armTimer.seconds() < 0.8) {
+                arm.setPosition(ARM_DOWN);
+            } else {
+                armMovingAuto = false;
+            }
         }
+
 
         if (gamepad1.right_bumper) {
             Intake.setPower(1);
