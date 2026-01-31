@@ -33,7 +33,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 
 
 @Config
-@Autonomous
+@Autonomous//working
 public final class CloseRSeq extends LinearOpMode {
     public static double first = 1.5;
     public static double second = 2.5;
@@ -46,7 +46,7 @@ public final class CloseRSeq extends LinearOpMode {
     public double curTargetVelocity = HighVelocityShot;
 
     public static double mover = 20;
-    //works
+
     public void initHardware() {
         intitShooter();
     }

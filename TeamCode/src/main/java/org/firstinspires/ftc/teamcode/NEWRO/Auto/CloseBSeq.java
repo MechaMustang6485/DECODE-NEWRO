@@ -33,7 +33,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 
 
 @Config
-@Autonomous//works
+@Autonomous//working
 public final class CloseBSeq extends LinearOpMode {
     public static double first = 0.4;
     public static double second = 1.5;
