@@ -50,7 +50,7 @@ public class DecodeDrive extends OpMode {
     private boolean armMovingAuto = false;
 
     public static double HighVelocityShot = 3800;
-    public static double LowVelocityShot = 3100;
+    public static double LowVelocityShot = 3300;
     public double curTargetVelocity = HighVelocityShot;
     public static double F = 4.5;
     public static double P = 4;
