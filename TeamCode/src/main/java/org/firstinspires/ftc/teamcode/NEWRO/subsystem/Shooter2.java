@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.NEWRO.subsystem;
 
-import androidx.annotation.NonNull;
 
+import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
@@ -12,57 +12,45 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 
-
 @Config
 public class Shooter2 {
 
-    // Hardware
-    private DcMotorEx shooterT, shooterB;
+    private final DcMotorEx shooterT, shooterB;
 
-    // Tuning Constants (Static so Dashboard sees them)
-    public static double p = 3, i = 0, d = 0;
-    public static double f = 3.1;
 
-    // Default Velocity targets
-    public static double HIGH_VELOCITY = 4500;
-    public static double LOW_VELOCITY = 4000;
+    // Tuning Constants
+    public static double p = 18, i = 0.0, d = 0.0;
+    public static double f = 30; // Feedforward (Tuned for ~13-14V)
+    public static double VELO_TOLERANCE = 75; // Acceptable error in ticks/sec
+    public static double HIGH_VELOCITY = 1200;
+    public static double LOW_VELOCITY = 0;
+
 
     public Shooter2(HardwareMap hardwareMap) {
-        // Initialize motors using your specific mapping
-        // Note: Preserving your swap (shooterB variable -> "shooterT" config)
         shooterB = hardwareMap.get(DcMotorEx.class, "shooterT");
         shooterT = hardwareMap.get(DcMotorEx.class, "shooterB");
+
 
         shooterB.setDirection(DcMotorSimple.Direction.REVERSE);
         shooterT.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        // Required for setVelocity to work
         shooterB.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooterT.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+        updatePIDF();
     }
 
-    // --- ACTIONS ---
-
-    /**
-     * Action to spin up the shooter to a specific velocity.
-     * Ends immediately (does not wait for spinup), letting the auto continue.
-     */
-    public Action spinUp(double velocity) {
-        return new SpinUpAction(velocity);
+    private void updatePIDF() {
+        PIDFCoefficients coeffs = new PIDFCoefficients(p, i, d, f);
+        shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coeffs);
+        shooterT.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coeffs);
     }
 
-    /**
-     * Action to stop the shooter.
-     */
-    public Action stop() {
-        return new SpinUpAction(0);
-    }
-
-    /**
-     * Inner class that handles the actual hardware command
-     */
-    private class SpinUpAction implements Action {
-        private boolean initialized = false;
-        private double targetVel;
+    public class SpinUpAction implements Action {
+        private final double targetVel;
+        private boolean paramsSet = false;
 
         public SpinUpAction(double targetVel) {
             this.targetVel = targetVel;
@@ -70,22 +58,38 @@ public class Shooter2 {
 
         @Override
         public boolean run(@NonNull TelemetryPacket packet) {
-            if (!initialized) {
-                // Apply PIDF Coefficients every time we send a command
-                // This ensures Dashboard tuning updates work instantly
-                PIDFCoefficients coeffs = new PIDFCoefficients(p, i, d, f);
-
-                shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coeffs);
-                shooterT.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coeffs);
-
-                shooterB.setVelocity(targetVel);
-                shooterT.setVelocity(targetVel);
-
-                initialized = true;
+            if (!paramsSet) {
+                updatePIDF();
+                paramsSet = true;
             }
-            // Return false immediately so the Action finishes and Auto moves to the next step
-            return false;
+
+            // Adjust target slightly based on voltage if not using internal compensation
+            // If battery is low, the internal PIDF might need more 'oomph'
+
+
+            shooterB.setVelocity(targetVel);
+            shooterT.setVelocity(targetVel);
+
+            double vB = shooterB.getVelocity();
+            double vT = shooterT.getVelocity();
+
+            packet.put("Target Velo", targetVel);
+            packet.put("Actual Velo B", vB);
+            packet.put("Actual Velo T", vT);
+
+
+            if (targetVel == 0) return false; // Stop immediately if turning off
+
+            // Return TRUE to keep running (waiting) until we are within tolerance
+            return Math.abs(targetVel - vB) > VELO_TOLERANCE;
         }
     }
-}
 
+    public Action spinUp(double velocity) {
+        return new SpinUpAction(velocity);
+    }
+
+    public Action stop() {
+        return new SpinUpAction(0);
+    }
+}

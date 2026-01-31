@@ -26,6 +26,7 @@ import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.RevolverRR;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter2;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
@@ -34,13 +35,12 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 @Config
 @Autonomous
 public final class CloseBSeq extends LinearOpMode {
-    public static double first = 0.5;
-    public static double second = 1;
-    public static int line = -30;
+    public static double first = 0.4;
+    public static double second = 1.5;
 
     public  double pshot = 7.3013, ishot = 0, dshot = 0;
     public static double fshot = 2.47;
-    public static double HighVelocityShot = 3120;
+    public static double HighVelocityShot = 1650;//3120
     public double LowVelocityShot = 900;
     public double curTargetVelocity = HighVelocityShot;
 
@@ -68,17 +68,19 @@ public final class CloseBSeq extends LinearOpMode {
         DcMotorEx shooterB = hardwareMap.get(DcMotorEx.class, "shooterT");
         DcMotorEx shooterT = hardwareMap.get(DcMotorEx.class, "shooterB");
         DcMotor intake = hardwareMap.get(DcMotorEx.class, "intake");
+        Shooter3 shooter = new Shooter3(hardwareMap);
 
 
         initHardware();
         waitForStart();
 
         TrajectoryActionBuilder move = drive.actionBuilder(new Pose2d(0, 0, 0))
-
-                .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
+                .stopAndAdd(shooter.setVelo(HighVelocityShot))
+               // .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
                 .strafeToLinearHeading(new Vector2d(-69.73, 8.64), Math.toRadians(-44), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(seq.scanLimelightPattern())
                 .strafeToLinearHeading(new Vector2d(-64.66, 14.86), Math.toRadians(-5), (pose2dDual, posePath, v) -> 82)
+                .waitSeconds(1)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
                 .stopAndAdd(seq.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
@@ -86,10 +88,12 @@ public final class CloseBSeq extends LinearOpMode {
 
                 .afterTime(first,seq.setTarget(96))
                 .afterTime(second,seq.setTarget(192))
+                .lineToX(-42)
+                .waitSeconds(0.3)
                 .lineToX(-40)
                 .waitSeconds(0.3)
                 .lineToX(-30)
-                .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
+               // .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
                 .strafeToLinearHeading(new Vector2d(-61.89, 15.29), Math.toRadians(2), (pose2dDual, posePath, v) -> 82)
                 .waitSeconds(0.4)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
@@ -114,7 +118,8 @@ public final class CloseBSeq extends LinearOpMode {
         Actions.runBlocking(
                 new ParallelAction(
                         move.build(),
-                        seq.updatePID()
+                        seq.updatePID(),
+                        shooter.new UpdateShooter()
         )
         );
 }
