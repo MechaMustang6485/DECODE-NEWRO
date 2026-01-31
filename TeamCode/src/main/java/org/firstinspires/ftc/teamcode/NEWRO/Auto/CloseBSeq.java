@@ -40,7 +40,7 @@ public final class CloseBSeq extends LinearOpMode {
 
     public  double pshot = 7.3013, ishot = 0, dshot = 0;
     public static double fshot = 2.47;
-    public static double HighVelocityShot = 1650;//3120
+    public static double HighVelocityShot = 1500;//3120
     public double LowVelocityShot = 900;
     public double curTargetVelocity = HighVelocityShot;
 
@@ -80,7 +80,7 @@ public final class CloseBSeq extends LinearOpMode {
                 .strafeToLinearHeading(new Vector2d(-69.73, 8.64), Math.toRadians(-44), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(seq.scanLimelightPattern())
                 .strafeToLinearHeading(new Vector2d(-64.66, 14.86), Math.toRadians(-5), (pose2dDual, posePath, v) -> 82)
-                .waitSeconds(1)
+                .waitSeconds(1.5)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
                 .stopAndAdd(seq.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))

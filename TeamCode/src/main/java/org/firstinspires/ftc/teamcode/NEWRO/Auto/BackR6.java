@@ -31,8 +31,8 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
 @Autonomous
 public final class BackR6 extends LinearOpMode {
 
-    public static int first = 1;
-    public static int second = 2;
+    public static int first = 2;
+    public static int second = 3;
 
     public void initHardware() {
         initArmOne();
@@ -78,7 +78,7 @@ public final class BackR6 extends LinearOpMode {
         TrajectoryActionBuilder move = drive.actionBuilder(new Pose2d(0, 0, 0))
                 // .waitSeconds(10)
                 .stopAndAdd(shooter.spinUp(Shooter.HIGH_VELOCITY))
-                .waitSeconds(2)
+                .waitSeconds(3)
                 .stopAndAdd(Revolver.setTarget(48))
                 .waitSeconds(0.3)
                 .stopAndAdd(new armAction(arm, 0.3))
@@ -88,7 +88,7 @@ public final class BackR6 extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(240))
-                .waitSeconds(0.7)
+                .waitSeconds(0.8)
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(0))
@@ -97,10 +97,13 @@ public final class BackR6 extends LinearOpMode {
                 .strafeToLinearHeading(new Vector2d(29, 34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)//THis part
                 .afterTime(first,Revolver.setTarget(96))
                 .afterTime(second,Revolver.setTarget(192))
-                .afterTime(2.4,new Intake(intake, 0))
-                .strafeToLinearHeading(new Vector2d(73, 34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
-                .waitSeconds(0.5)
-                .strafeToLinearHeading(new Vector2d(4, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(40, 36.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
+                .waitSeconds(0.6)
+                .strafeToLinearHeading(new Vector2d(73, 36.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
+                .waitSeconds(0.4)
+                .stopAndAdd(new Intake(intake, 0))
+                .waitSeconds(0.2)
+                .strafeToLinearHeading(new Vector2d(3, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
 
                 .stopAndAdd(Revolver.setTarget(0))
                 .waitSeconds(0.3)
@@ -113,7 +116,7 @@ public final class BackR6 extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(240))
-                .waitSeconds(0.5)
+                .waitSeconds(0.6)
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(0))

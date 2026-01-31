@@ -20,8 +20,8 @@ public class Shooter3 {
     private final VoltageSensor batteryVoltage;
 
     // TUNE THESE IN DASHBOARD
-    public static double P = 7.3, I = 0, D = 0.5;
-    public static double F = 13.5;
+    public static double P = 13, I = 0, D = 0;
+    public static double F = 11.3;
     public static double activeTargetVelo = 0;
 
     public Shooter3(HardwareMap hardwareMap) {

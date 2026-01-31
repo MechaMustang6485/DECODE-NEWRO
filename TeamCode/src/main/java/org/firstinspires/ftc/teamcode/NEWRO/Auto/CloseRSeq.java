@@ -26,6 +26,7 @@ import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.RevolverRR;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter2;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
@@ -35,12 +36,12 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 @Autonomous
 public final class CloseRSeq extends LinearOpMode {
     public static double first = 1.5;
-    public static double second = 2;
+    public static double second = 2.5;
     public static int line = -30;
 
     public double pshot = 7.3013, ishot = 0, dshot = 0;
     public static double fshot = 2.47;
-    public static double HighVelocityShot = 3125;
+    public static double HighVelocityShot = 1500;
     public double LowVelocityShot = 900;
     public double curTargetVelocity = HighVelocityShot;
 
@@ -70,6 +71,7 @@ public final class CloseRSeq extends LinearOpMode {
         DcMotorEx shooterB = hardwareMap.get(DcMotorEx.class, "shooterT");
         DcMotorEx shooterT = hardwareMap.get(DcMotorEx.class, "shooterB");
         DcMotor intake = hardwareMap.get(DcMotorEx.class, "intake");
+        Shooter3 shooter = new Shooter3(hardwareMap);
 
 
         initHardware();
@@ -77,10 +79,11 @@ public final class CloseRSeq extends LinearOpMode {
 
         TrajectoryActionBuilder move = drive.actionBuilder(new Pose2d(0, 0, 0))
 
-                .stopAndAdd(new Shooter(shooterB, shooterT, curTargetVelocity))
+                .stopAndAdd(shooter.setVelo(HighVelocityShot))
                 .strafeToLinearHeading(new Vector2d(-61.73, -16.7), Math.toRadians(62.7), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(seq.scanLimelightPattern())
                 .strafeToLinearHeading(new Vector2d(-58.2, -14.3), Math.toRadians(18.7), (pose2dDual, posePath, v) -> 82)
+                .waitSeconds(1.5)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
                 .stopAndAdd(seq.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
@@ -88,13 +91,14 @@ public final class CloseRSeq extends LinearOpMode {
 
                 .afterTime(first, seq.setTarget(96))
                 .afterTime(second, seq.setTarget(192))
+                .strafeToLinearHeading(new Vector2d(-52, -36), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
+                .waitSeconds(1)
                 .strafeToLinearHeading(new Vector2d(-35.9, -52.0), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
                 .waitSeconds(0.1)
-                .stopAndAdd(new Shooter(shooterB, shooterT, curTargetVelocity))
-                .strafeToLinearHeading(new Vector2d( -58.2, -15.0), Math.toRadians(17.8), (pose2dDual, posePath, v) -> 82)
+                .strafeToLinearHeading(new Vector2d( -58.2, -15.0), Math.toRadians(16), (pose2dDual, posePath, v) -> 82)
 
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
-                .strafeToLinearHeading(new Vector2d( -81.4, -25.4), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
+                .strafeToLinearHeading(new Vector2d( -90, -25.4), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(new Shooter(shooterB, shooterT, 0))
                 ;
 
@@ -107,7 +111,8 @@ public final class CloseRSeq extends LinearOpMode {
         Actions.runBlocking(
                 new ParallelAction(
                         move.build(),
-                        seq.updatePID()
+                        seq.updatePID(),
+                        shooter.new UpdateShooter()
                 )
         );
     }

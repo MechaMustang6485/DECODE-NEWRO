@@ -61,7 +61,7 @@ public class TouchRev3 {
     public static boolean ONLY_VALIDATE_FIRST_TWO = true;
 
     // Extra delay AFTER validation passes and BEFORE arm up (your “rev-up” window)
-    public double PRE_SHOT_REV_DELAY_SEC = 0.30;
+    public double PRE_SHOT_REV_DELAY_SEC = 0.50;
 
     // Arm timing
     public double ARM_UPDOWN_SEC = 0.20;

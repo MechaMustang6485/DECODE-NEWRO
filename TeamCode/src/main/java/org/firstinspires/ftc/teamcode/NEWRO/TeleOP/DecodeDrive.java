@@ -49,11 +49,11 @@ public class DecodeDrive extends OpMode {
     private ElapsedTime armTimer = new ElapsedTime();
     private boolean armMovingAuto = false;
 
-    public static double HighVelocityShot = 3800;
-    public static double LowVelocityShot = 3300;
+    public static double HighVelocityShot = 1500;
+    public static double LowVelocityShot = 1300;
     public double curTargetVelocity = HighVelocityShot;
-    public static double F = 4.5;
-    public static double P = 4;
+    public static double F = 17.5;
+    public static double P = 13;
 
     private final double ticks_in_degree = 700/ 180.0;//changes depending on the motor
 
@@ -208,6 +208,7 @@ public class DecodeDrive extends OpMode {
 
 
          */
+
 
 
 

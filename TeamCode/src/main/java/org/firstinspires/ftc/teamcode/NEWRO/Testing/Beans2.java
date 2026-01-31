@@ -36,7 +36,7 @@ public class Beans2 extends OpMode {
     private ElapsedTime armTimer = new ElapsedTime();
     private boolean armMovingAuto = false;
 
-    public static double F = 17.5;
+    public static double F = 10.5;
 
     public static double P = 13;
 
