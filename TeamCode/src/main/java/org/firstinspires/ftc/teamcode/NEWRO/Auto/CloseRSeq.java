@@ -46,7 +46,7 @@ public final class CloseRSeq extends LinearOpMode {
     public double curTargetVelocity = HighVelocityShot;
 
     public static double mover = 20;
-
+    //works
     public void initHardware() {
         intitShooter();
     }

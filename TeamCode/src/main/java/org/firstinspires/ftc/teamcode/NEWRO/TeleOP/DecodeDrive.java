@@ -30,7 +30,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import java.util.List;
 
 @Config//important
-@TeleOp
+@TeleOp//works
 public class DecodeDrive extends OpMode {
     private PIDFController controller;//important
 
