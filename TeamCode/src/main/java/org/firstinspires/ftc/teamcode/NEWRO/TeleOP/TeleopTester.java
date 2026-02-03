@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.NEWRO.TeleOP;
 
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -10,7 +11,6 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -27,13 +27,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.R;
 
 import java.util.List;
 
-
-@Config//important
+@Config
 @TeleOp
-public class GamepadeOverrideTest extends OpMode {
+public class TeleopTester extends OpMode {
     private PIDFController controller;//important
 
     public static double p = 0.1, i = 0, d= 0.0002;
@@ -41,17 +41,23 @@ public class GamepadeOverrideTest extends OpMode {
 
     private static final int home = 0;
 
-    public static int target = home;//this number can be used for the shoot position.
+    public static int target = home;
 
     public static int intake = 96;
 
     public static int shoot = 48;
 
-    public static double HighVelocityShot = 4000;
-    public static double LowVelocityShot = 2700;
+    public static double ARM_UP = 0.3, ARM_DOWN = 0.0;
+    private ElapsedTime armTimer = new ElapsedTime();
+    private ElapsedTime RevolverTimer = new ElapsedTime();
+    private boolean armMovingAuto = false;
+    private boolean RevovlerMoving = false;
+
+    public static double HighVelocityShot = 1500;
+    public static double LowVelocityShot = 1225;
     public double curTargetVelocity = HighVelocityShot;
-    public static double F = 4.5;
-    public static double P = 4;
+    public static double F = 17.5;
+    public static double P = 13;
 
     private final double ticks_in_degree = 700/ 180.0;//changes depending on the motor
 
@@ -64,7 +70,7 @@ public class GamepadeOverrideTest extends OpMode {
     private IMU imu;
     private DcMotorEx Intake;
     private GoBildaPinpointDriver pinpoint;
-
+    private TouchSensor touch;
 
     private DcMotor leftFront;
     private DcMotor rightFront;
@@ -87,18 +93,7 @@ public class GamepadeOverrideTest extends OpMode {
     // Safety Limits
     public static boolean Limits = true;
     public static int MinPo = -11000;
-    public static int Maxpo = 3600;
-
-    final int TICKS_PER_SLOT = 96;
-    final int MAX_BALLS = 3;
-    final int SHOOT_POS = 48;
-
-    // state
-    int ballCount = 0;
-    boolean lastTouch = false;
-    boolean touchEnabled = true;
-
-    private TouchSensor touch;
+    public static int Maxpo = 4800;
 
 
     private double lastError = 0;
@@ -109,8 +104,6 @@ public class GamepadeOverrideTest extends OpMode {
     @Override
     public void init(){
         controller = new PIDController(p, i, d);
-
-        touch = hardwareMap.get(TouchSensor.class, "touch");
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());//allow to do stuff in dash board
         Revolver = hardwareMap.get(DcMotorEx.class,"revolver");
@@ -139,7 +132,7 @@ public class GamepadeOverrideTest extends OpMode {
         rightBack = hardwareMap.get(DcMotor.class, "Br");
         leftBack = hardwareMap.get(DcMotor.class, "Bl");
 
-        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -167,6 +160,7 @@ public class GamepadeOverrideTest extends OpMode {
         arm = hardwareMap.get(Servo.class, "arm");
         arm.setPosition(0);
 
+        touch = hardwareMap.get(TouchSensor.class, "touch");
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
@@ -180,39 +174,10 @@ public class GamepadeOverrideTest extends OpMode {
         pidTimer.reset();
     }
 
-    // call this every loop (TeleOp or RR Action loop)
-    void handleTouchIndexing(DcMotorEx revolver, TouchSensor touch, DcMotor intake) {
-
-        if (!touchEnabled) return;
-
-        boolean pressed = touch.isPressed();
-
-        // edge detect
-        if (pressed && !lastTouch) {
-            ballCount++;
-
-            if (ballCount < MAX_BALLS) {
-                // move to next intake slot
-                int target = ballCount * TICKS_PER_SLOT;
-                revolver.setTargetPosition(target); // or your PID target variable
-            } else {
-                // reached 3 balls
-                touchEnabled = false;
-                intake.setPower(0);
-
-                // go to shoot position
-                revolver.setTargetPosition(SHOOT_POS);
-            }
-        }
-
-        lastTouch = pressed;
-    }
-
     @Override
     public void loop(){
         runTurretLogic();
         DriveInit();
-
 
 
         controller.setPIDF(p, i, d, f);
@@ -225,7 +190,7 @@ public class GamepadeOverrideTest extends OpMode {
         double power = pid + ff;//math that sets the power
         Revolver.setPower(power);
         telemetry.addData("pose1",revpose);
-
+        boolean pressed = touch.isPressed();
 
         if (gamepad2.xWasPressed()) {
             if (target == 0|| target == 144 || target == 240) {
@@ -236,9 +201,23 @@ public class GamepadeOverrideTest extends OpMode {
                 target = home;
             }
         }
+        /*
+        if (gamepad1.dpad_left) {
+            Revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        }
 
-        if (gamepad2.yWasPressed()) {
-            if (target == 0|| target == 96 || target == 192) {
+        if (gamepad1.dpad_right) {
+            Revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        }
+
+
+         */
+
+
+
+
+        if (gamepad2.yWasPressed()) {//shoot position
+            if (target == 0|| target == 96 || target == 192 || target == 48) {
                 target = 144;
             } else if (target == 144) {
                 target = 240;
@@ -247,13 +226,49 @@ public class GamepadeOverrideTest extends OpMode {
                 target = shoot;
             }
         }
+        if (gamepad1.a) {
+            curTargetVelocity = 4000;
+        }
+
+        if (gamepad1.y) {
+            curTargetVelocity = 3500;
+        }
 
         if (gamepad2.dpadLeftWasPressed()) Intake.setPower(1);
         if (gamepad2.dpadRightWasPressed())Intake.setPower(0);
 
+        if (gamepad2.right_trigger >= 1) {
+            Intake.setPower(-1);
+        }
         if (gamepad2.dpadUpWasPressed()) {
-            arm.setPosition(0.3);
-            arm.setPosition(0);
+          //  armMovingAuto = true;
+            RevovlerMoving = true;
+            RevolverTimer.reset();
+           // armTimer.reset();
+        }
+
+        if (armMovingAuto) {
+            if (armTimer.seconds() < 0.4) {
+                arm.setPosition(ARM_UP);
+            } else if (armTimer.seconds() < 0.8) {
+                arm.setPosition(ARM_DOWN);
+            } else {
+                armMovingAuto = false;
+            }
+        }
+        if (RevovlerMoving){
+            if (RevolverTimer.seconds() <0.4){
+                target = 48;
+            }
+            if (RevolverTimer.seconds() <0.8){
+                target = 144;
+            }
+            else if (RevolverTimer.seconds() <0.12){
+                target = 240;
+            }
+            else {
+                RevovlerMoving  = false;
+            }
         }
 
 
@@ -265,20 +280,18 @@ public class GamepadeOverrideTest extends OpMode {
 
         if (gamepad2.right_bumper) {
 
-                shooterT.setVelocity(curTargetVelocity);
-                shooterB.setVelocity(curTargetVelocity);
-            }
+            shooterT.setVelocity(curTargetVelocity);
+            shooterB.setVelocity(curTargetVelocity);
+        }
 
         if (gamepad2.left_bumper){
-                shooterT.setVelocity(LowVelocityShot);
-                shooterB.setVelocity(LowVelocityShot);
-            }
+            shooterT.setVelocity(LowVelocityShot);
+            shooterB.setVelocity(LowVelocityShot);
+        }
 
         if (gamepad2.b){
             shooterT.setVelocity(0);
             shooterB.setVelocity(0);
-            ballCount = 0;
-            touchEnabled = false;
         }
 
 

@@ -50,7 +50,7 @@ public class DecodeDrive extends OpMode {
     private boolean armMovingAuto = false;
 
     public static double HighVelocityShot = 1500;
-    public static double LowVelocityShot = 1300;
+    public static double LowVelocityShot = 1225;
     public double curTargetVelocity = HighVelocityShot;
     public static double F = 17.5;
     public static double P = 13;
@@ -89,7 +89,7 @@ public class DecodeDrive extends OpMode {
     // Safety Limits
     public static boolean Limits = true;
     public static int MinPo = -11000;
-    public static int Maxpo = 3600;
+    public static int Maxpo = 4800;
 
 
     private double lastError = 0;
@@ -128,7 +128,7 @@ public class DecodeDrive extends OpMode {
         rightBack = hardwareMap.get(DcMotor.class, "Br");
         leftBack = hardwareMap.get(DcMotor.class, "Bl");
 
-        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -212,7 +212,7 @@ public class DecodeDrive extends OpMode {
 
 
 
-        if (gamepad2.yWasPressed()) {
+        if (gamepad2.yWasPressed()) {//shoot position
             if (target == 0|| target == 96 || target == 192 || target == 48) {
                 target = 144;
             } else if (target == 144) {

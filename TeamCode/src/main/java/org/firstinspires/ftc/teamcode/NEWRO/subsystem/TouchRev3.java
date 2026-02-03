@@ -55,7 +55,7 @@ public class TouchRev3 {
     public static float PURPLE_H_MAX = 255;
 
     public double VALIDATE_DELAY_SEC = 0.40;      // wait at shoot pos before reading
-    public double UNKNOWN_SCAN_SEC = 0.70;        // if UNKNOWN, keep sampling for this long
+    public double UNKNOWN_SCAN_SEC = 0.50;        // if UNKNOWN, keep sampling for this long
 
     // Only validate first 2 balls (3rd assumed correct)
     public static boolean ONLY_VALIDATE_FIRST_TWO = true;
@@ -67,7 +67,7 @@ public class TouchRev3 {
     public double ARM_UPDOWN_SEC = 0.20;
 
     // After a shot, give the next ball time to settle into the slot
-    public double BALL_SETTLE_SEC = 0.70;
+    public double BALL_SETTLE_SEC = 0.50;
 
     // =========================
     // LIMELIGHT CONFIG
@@ -122,7 +122,7 @@ public class TouchRev3 {
     // LIMELIGHT STATE
     // =========================
     public enum Pattern { GPP, PGP, PPG }
-    private volatile Pattern desiredPattern = Pattern.GPP;
+    private volatile Pattern desiredPattern = Pattern.PGP;
     private volatile int lastSequenceId = -1;
 
     // =========================

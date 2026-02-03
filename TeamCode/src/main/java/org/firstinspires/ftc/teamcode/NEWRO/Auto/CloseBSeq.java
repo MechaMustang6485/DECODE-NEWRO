@@ -35,8 +35,8 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 @Config
 @Autonomous//working
 public final class CloseBSeq extends LinearOpMode {
-    public static double first = 0.4;
-    public static double second = 1.5;
+    public static double first = 0.9;
+    public static double second = 2.5;
 
     public  double pshot = 7.3013, ishot = 0, dshot = 0;
     public static double fshot = 2.47;
@@ -80,7 +80,7 @@ public final class CloseBSeq extends LinearOpMode {
                 .strafeToLinearHeading(new Vector2d(-69.73, 8.64), Math.toRadians(-44), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(seq.scanLimelightPattern())
                 .strafeToLinearHeading(new Vector2d(-64.66, 14.86), Math.toRadians(-5), (pose2dDual, posePath, v) -> 82)
-                .waitSeconds(1.5)
+                .waitSeconds(1.3)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
                 .stopAndAdd(seq.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
@@ -91,20 +91,17 @@ public final class CloseBSeq extends LinearOpMode {
                 .lineToX(-42)
                 .waitSeconds(0.3)
                 .lineToX(-40)
-                .waitSeconds(0.3)
+                .waitSeconds(0.2)
                 .lineToX(-30)
                // .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
                 .strafeToLinearHeading(new Vector2d(-61.89, 15.29), Math.toRadians(2), (pose2dDual, posePath, v) -> 82)
-                .waitSeconds(0.4)
+                .waitSeconds(0.2)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
                 .stopAndAdd(new Shooter(shooterB, shooterT, 0))
 
                 .stopAndAdd(seq.setTarget(0))
-                .stopAndAdd(new Intake(intake, 1))
                 .strafeToLinearHeading(new Vector2d(-74.51, 50), Math.toRadians(39), (pose2dDual, posePath, v) -> 82)
-                .afterTime(first,seq.setTarget(96))
-                .afterTime(second,seq.setTarget(192))
-                .stopAndAdd(new Intake(intake, 0));
+                ;
                 //.stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
                 //.strafeToLinearHeading(new Vector2d(-65.33, 14.90), Math.toRadians(-6), (pose2dDual, posePath, v) -> 82)
                 //.stopAndAdd(seq.runSequence3ShotsNoShooter())

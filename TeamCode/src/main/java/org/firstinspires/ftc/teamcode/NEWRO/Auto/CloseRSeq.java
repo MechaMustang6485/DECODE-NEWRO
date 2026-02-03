@@ -35,7 +35,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 @Config
 @Autonomous//working
 public final class CloseRSeq extends LinearOpMode {
-    public static double first = 1.5;
+    public static double first = 1.3;
     public static double second = 2.5;
     public static int line = -30;
 
@@ -83,7 +83,7 @@ public final class CloseRSeq extends LinearOpMode {
                 .strafeToLinearHeading(new Vector2d(-61.73, -16.7), Math.toRadians(62.7), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(seq.scanLimelightPattern())
                 .strafeToLinearHeading(new Vector2d(-58.2, -14.3), Math.toRadians(18.7), (pose2dDual, posePath, v) -> 82)
-                .waitSeconds(1.5)
+                .waitSeconds(1.3)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
                 .stopAndAdd(seq.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
@@ -92,13 +92,12 @@ public final class CloseRSeq extends LinearOpMode {
                 .afterTime(first, seq.setTarget(96))
                 .afterTime(second, seq.setTarget(192))
                 .strafeToLinearHeading(new Vector2d(-52, -36), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
-                .waitSeconds(1)
+                .waitSeconds(0.3)
                 .strafeToLinearHeading(new Vector2d(-35.9, -52.0), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
                 .waitSeconds(0.1)
-                .strafeToLinearHeading(new Vector2d( -58.2, -15.0), Math.toRadians(16), (pose2dDual, posePath, v) -> 82)
-
+                .strafeToLinearHeading(new Vector2d( -55.2, -12.0), Math.toRadians(10.4), (pose2dDual, posePath, v) -> 90)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
-                .strafeToLinearHeading(new Vector2d( -90, -25.4), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
+                .strafeToLinearHeading(new Vector2d(-83.3, -51.1), Math.toRadians(-42.9), (pose2dDual, posePath, v) -> 90)
                 .stopAndAdd(new Shooter(shooterB, shooterT, 0))
                 ;
 
