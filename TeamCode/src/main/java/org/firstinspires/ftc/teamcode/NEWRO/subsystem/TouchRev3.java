@@ -42,6 +42,15 @@ public class TouchRev3 {
     public static int POS_SHOOT1 = 144;
     public static int POS_SHOOT2 = 240;
 
+    // =========================
+// TOUCH-ADVANCE (AUTO LOAD) STATE
+// =========================
+    private boolean touchAdvanceEnabled = true;   // can be toggled
+    private boolean touchLockedOut = false;       // true after 3 balls
+    private int touchBallCount = 0;               // 0..3
+    private boolean touchLastPressed = false;     // edge detect
+
+
     public static int AT_TARGET_TOL = 8;
 
     public double MOVE_TIMEOUT_SEC = 0.45;
@@ -827,4 +836,66 @@ public class TouchRev3 {
 
         return out;
     }
+
+    public Action updateTouchAdvance() {
+        return new Action() {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+                // Don't load while shooting sequence is running (optional but recommended)
+                if (sequenceRunning) {
+                    packet.put("Touch/BlockedBySeq", true);
+                    return true;
+                }
+
+                boolean pressed = touchSensor.isPressed();
+
+                if (touchAdvanceEnabled && !touchLockedOut) {
+                    // Rising edge only
+                    if (pressed && !touchLastPressed) {
+
+                        if (touchBallCount < MAX_SLOTS) {
+                            touchBallCount++;
+
+                            // advance by one slot
+                            targetPosition = clamp(touchBallCount * TICKS_PER_SLOT, 0, MAX_POSITION);
+
+                            // When we hit 3 balls, lock it out until reset
+                            if (touchBallCount >= MAX_SLOTS) {
+                                touchLockedOut = true;
+                            }
+                        } else {
+                            touchLockedOut = true;
+                        }
+                    }
+                }
+
+                touchLastPressed = pressed;
+
+                packet.put("Touch/Pressed", pressed);
+                packet.put("Touch/Enabled", touchAdvanceEnabled);
+                packet.put("Touch/Locked", touchLockedOut);
+                packet.put("Touch/Balls", touchBallCount);
+                packet.put("Rev/Target", targetPosition);
+                packet.put("Rev/Actual", revolver.getCurrentPosition());
+
+                return true; // keep running forever
+            }
+        };
+    }
+
+    public Action resetTouch() {
+        return packet -> {
+            touchBallCount = 0;
+            touchLockedOut = false;
+            touchLastPressed = false;
+            return false;
+        };
+    }
+
+    public Action disableTouchAdvance() { return p -> { touchAdvanceEnabled = false; return false; }; }
+    public Action enableTouchAdvance()  { return p -> { touchAdvanceEnabled = true;  return false; }; }
+    public int getTouchBallCount() { return touchBallCount; }
+    public boolean isTouchLockedOut() { return touchLockedOut; }
+
 }
