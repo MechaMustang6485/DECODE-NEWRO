@@ -1,9 +1,13 @@
 package org.firstinspires.ftc.teamcode.NEWRO.TeleOP;
 
 
+
+
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.roadrunner.Action;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
@@ -27,7 +31,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.R;
+
 
 import java.util.List;
 
@@ -52,6 +56,8 @@ public class TeleopTester extends OpMode {
     private ElapsedTime RevolverTimer = new ElapsedTime();
     private boolean armMovingAuto = false;
     private boolean RevovlerMoving = false;
+    boolean DoubleCheck = false;
+    private boolean isSensorEnabled = false;
 
     public static double HighVelocityShot = 1500;
     public static double LowVelocityShot = 1225;
@@ -70,7 +76,7 @@ public class TeleopTester extends OpMode {
     private IMU imu;
     private DcMotorEx Intake;
     private GoBildaPinpointDriver pinpoint;
-    private TouchSensor touch;
+    private  TouchSensor touchSensor;
 
     private DcMotor leftFront;
     private DcMotor rightFront;
@@ -79,6 +85,15 @@ public class TeleopTester extends OpMode {
 
     private int lockedTargetID = -1;
 
+    private boolean touchAdvanceEnabled = true;   // can be toggled
+    private boolean touchLockedOut = false;       // true after 3 balls
+    private int touchBallCount = 3;               // 0..3
+    private boolean touchLastPressed = false;     // edge detect
+    public static int TICKS_PER_SLOT = 96;
+    public static int MAX_SLOTS = 3;
+    public static int MAX_POSITION = MAX_SLOTS * TICKS_PER_SLOT; // 288
+
+    private int targetPosition = 0;
 
     public static int Pollher = 100;
 
@@ -160,7 +175,7 @@ public class TeleopTester extends OpMode {
         arm = hardwareMap.get(Servo.class, "arm");
         arm.setPosition(0);
 
-        touch = hardwareMap.get(TouchSensor.class, "touch");
+        touchSensor = hardwareMap.get(TouchSensor.class, "touch");
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
@@ -190,17 +205,30 @@ public class TeleopTester extends OpMode {
         double power = pid + ff;//math that sets the power
         Revolver.setPower(power);
         telemetry.addData("pose1",revpose);
-        boolean pressed = touch.isPressed();
 
-        if (gamepad2.xWasPressed()) {
-            if (target == 0|| target == 144 || target == 240) {
-                target = intake;
-            } else if (target == 96) {
-                target = 192;
-            } else {
-                target = home;
+        boolean pressed = touchSensor.isPressed();
+
+        if (touchAdvanceEnabled && !touchLockedOut) {
+            // Rising edge only
+            if (pressed && !touchLastPressed) {
+
+                if (touchBallCount < MAX_SLOTS) {
+                    touchBallCount++;
+
+                    // advance by one slot
+                    targetPosition = clamp(touchBallCount * TICKS_PER_SLOT, 0, MAX_POSITION);
+
+                    // When we hit 3 balls, lock it out until reset
+                    if (touchBallCount >= MAX_SLOTS) {
+                        touchLockedOut = true;
+                    }
+                } else {
+                    touchLockedOut = true;
+                }
             }
         }
+
+        touchLastPressed = pressed;
         /*
         if (gamepad1.dpad_left) {
             Revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
@@ -241,10 +269,35 @@ public class TeleopTester extends OpMode {
             Intake.setPower(-1);
         }
         if (gamepad2.dpadUpWasPressed()) {
-          //  armMovingAuto = true;
+            //  armMovingAuto = true;
             RevovlerMoving = true;
             RevolverTimer.reset();
-           // armTimer.reset();
+            // armTimer.reset();
+        }
+
+        if (RevovlerMoving) {//this works
+            double elapsed = RevolverTimer.seconds();
+            if (elapsed < 1.2) {
+                target = 48;
+                if (elapsed > 0.4 && elapsed < 0.8) arm.setPosition(ARM_UP);
+                else arm.setPosition(ARM_DOWN);
+            }
+            else if (elapsed < 2.4) {
+                target = 144;
+                if (elapsed > 1.6 && elapsed < 2.0) arm.setPosition(ARM_UP);
+                else arm.setPosition(ARM_DOWN);
+            }
+            else if (elapsed < 3.6) {
+                target = 240;
+                if (elapsed > 2.8 && elapsed < 3.2) arm.setPosition(ARM_UP);
+                else arm.setPosition(ARM_DOWN);
+            }
+            else {
+                RevovlerMoving = false;
+                arm.setPosition(ARM_DOWN);
+                target = 0;
+
+            }
         }
 
         if (armMovingAuto) {
@@ -256,21 +309,6 @@ public class TeleopTester extends OpMode {
                 armMovingAuto = false;
             }
         }
-        if (RevovlerMoving){
-            if (RevolverTimer.seconds() <0.4){
-                target = 48;
-            }
-            if (RevolverTimer.seconds() <0.8){
-                target = 144;
-            }
-            else if (RevolverTimer.seconds() <0.12){
-                target = 240;
-            }
-            else {
-                RevovlerMoving  = false;
-            }
-        }
-
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
         PIDFCoefficients pidfCoefficients1 = new PIDFCoefficients(P,0, 0, F);
@@ -300,7 +338,9 @@ public class TeleopTester extends OpMode {
 
 
     }
-
+    private int clamp(int v, int lo, int hi) {
+        return Math.max(lo, Math.min(hi, v));
+    }
 
     @Override
     public void stop() {
@@ -449,5 +489,3 @@ public class TeleopTester extends OpMode {
         telemetry.update();
     }
 }
-
-

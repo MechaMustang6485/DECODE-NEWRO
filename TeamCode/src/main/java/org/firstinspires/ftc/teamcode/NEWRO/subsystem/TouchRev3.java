@@ -47,7 +47,7 @@ public class TouchRev3 {
 // =========================
     private boolean touchAdvanceEnabled = true;   // can be toggled
     private boolean touchLockedOut = false;       // true after 3 balls
-    private int touchBallCount = 0;               // 0..3
+    private int touchBallCount = 3;               // 0..3
     private boolean touchLastPressed = false;     // edge detect
 
 

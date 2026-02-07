@@ -71,8 +71,7 @@ public class Shooter {
         @Override
         public boolean run(@NonNull TelemetryPacket packet) {
             if (!initialized) {
-                // Apply PIDF Coefficients every time we send a command
-                // This ensures Dashboard tuning updates work instantly
+
                 PIDFCoefficients coeffs = new PIDFCoefficients(p, i, d, f);
 
                 shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coeffs);
@@ -83,7 +82,6 @@ public class Shooter {
 
                 initialized = true;
             }
-            // Return false immediately so the Action finishes and Auto moves to the next step
             return false;
         }
     }
