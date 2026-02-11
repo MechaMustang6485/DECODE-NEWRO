@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.NEWRO.Auto;
 
 
 
-
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -30,6 +29,8 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter4;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret2;
 
 
 @Config
@@ -81,58 +82,43 @@ public final class RRCodetest extends LinearOpMode {
         TouchRev3 Revolver = new TouchRev3(hardwareMap);
         Servo arm = hardwareMap.get(Servo.class, "arm");
         DcMotor intake = hardwareMap.get(DcMotorEx.class, "intake");
-        CRServo turret = hardwareMap.get(CRServo.class, "Turret");
         Shooter4 shooter = new Shooter4(hardwareMap);
+        Turret2 turret = new Turret2(hardwareMap);
+
 
 
         initHardware();
         waitForStart();
 
         TrajectoryActionBuilder move = drive.actionBuilder(new Pose2d(0, 0, 0))
+                //shooting #1
+                // .waitSeconds(10)
                 .stopAndAdd(shooter.setVelo(HighVelocityShot))
                 .waitSeconds(2)
                 .stopAndAdd(Revolver.setTarget(48))
                 .waitSeconds(0.3)
-                .stopAndAdd(new Back6test.armAction(arm, 0.3))
-                .stopAndAdd(new Back6test.armAction(arm, 0))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(144))
                 .waitSeconds(0.7)
-                .stopAndAdd(new Back6test.armAction(arm, 0.3))
-                .stopAndAdd(new Back6test.armAction(arm, 0))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(240))
                 .waitSeconds(0.7)
-                .stopAndAdd(new Back6test.armAction(arm, 0.3))
-                .stopAndAdd(new Back6test.armAction(arm, 0))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
-               // .strafeToLinearHeading(new Vector2d(61.6, -12.6), Math.toRadians(15.6), (pose2dDual, posePath, v) -> 80)
-                .stopAndAdd(Revolver.resetTouch())
-                .strafeToLinearHeading(new Vector2d(61.4, -3.9), Math.toRadians(13.8), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(60.4, -5), Math.toRadians(13.8), (pose2dDual, posePath, v) -> 80)
-                .waitSeconds(0.4)
-                .strafeToLinearHeading(new Vector2d(13.32, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .stopAndAdd(Revolver.setTarget(0))
-                .waitSeconds(0.3)
-                .stopAndAdd(Revolver.setTarget(48))
-                .waitSeconds(0.5)
-                .stopAndAdd(new Back6test.armAction(arm, 0.3))
-                .stopAndAdd(new Back6test.armAction(arm, 0))
-                .stopAndAdd(Revolver.setTarget(144))
-                .waitSeconds(0.7)
-                .stopAndAdd(new Back6test.armAction(arm, 0.3))
-                .stopAndAdd(new Back6test.armAction(arm, 0))
-                .stopAndAdd(new Back6test.Intake(intake, 1))
                 //spike line #1
-                .strafeToLinearHeading(new Vector2d(21.9, -34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(25.2, 35.6), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .stopAndAdd(Revolver.resetTouch())
-                .strafeToLinearHeading(new Vector2d(73, -34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
-
-                .strafeToLinearHeading(new Vector2d(13.32, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .stopAndAdd(new Back6test.Intake(intake, 0))
-                //shooting #2
-                .stopAndAdd(Revolver.setTarget(0))
+                .strafeToLinearHeading(new Vector2d(65.1, 34.9), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
+//                .strafeToLinearHeading(new Vector2d(0.3637, 0.728), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(0.1, 0), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.3)
-                .stopAndAdd(Revolver.setTarget(48))
+                .stopAndAdd(new Intake(intake, 0))
+                //shooting #2
+                .stopAndAdd(Revolver.setTarget(240))
                 .waitSeconds(0.5)
                 .stopAndAdd(new Back6test.armAction(arm, 0.3))
                 .stopAndAdd(new Back6test.armAction(arm, 0))
@@ -140,11 +126,85 @@ public final class RRCodetest extends LinearOpMode {
                 .waitSeconds(0.7)
                 .stopAndAdd(new Back6test.armAction(arm, 0.3))
                 .stopAndAdd(new Back6test.armAction(arm, 0))
-                .stopAndAdd(Revolver.setTarget(240))
+                .stopAndAdd(Revolver.setTarget(48))
                 .waitSeconds(0.7)
                 .stopAndAdd(new Back6test.armAction(arm, 0.3))
                 .stopAndAdd(new Back6test.armAction(arm, 0))
+                .waitSeconds(0.3)
+                .stopAndAdd(Revolver.setTarget(0))
+                .stopAndAdd(Revolver.resetTouch())
+                .stopAndAdd(new Back6test.Intake(intake, 1))
+                .strafeToLinearHeading(new Vector2d(67.6, 5.2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .waitSeconds(0.4)
+                .strafeToLinearHeading(new Vector2d(63.0, 2.1), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                //.strafeToLinearHeading(new Vector2d(57.2, -2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(69.3, 1.8), Math.toRadians(-14.6), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(64.6, 1.9), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .waitSeconds(0.7)
+                .strafeToLinearHeading(new Vector2d(10.1, 0.89), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .stopAndAdd(Revolver.setTarget(240))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
+                .stopAndAdd(Revolver.setTarget(144))
+                .waitSeconds(0.7)
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
+                .stopAndAdd(Revolver.setTarget(48))
+                .waitSeconds(0.7)
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
+                .waitSeconds(1)
+                .stopAndAdd(Revolver.setTarget(0))
+                .strafeToLinearHeading(new Vector2d(25.2,30.3), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+
+                //spike line #2
+                /*
+                .stopAndAdd(new Intake(intake, 1))
+                .stopAndAdd(Revolver.setTarget(0))
+                .strafeToLinearHeading(new Vector2d(74, -16), Math.toRadians(0), (pose2dDual, posePath, v) -> 40)
+                .waitSeconds(0.3)
+                .strafeToLinearHeading(new Vector2d(74, -7.1), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .waitSeconds(0.3)
+                .stopAndAdd(Revolver.setTarget(96))
+                .lineToX(79)
+                .strafeToLinearHeading(new Vector2d(74, -1), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .waitSeconds(0.3)
+                .stopAndAdd(Revolver.setTarget(192))
+                .lineToX(85)
+                .waitSeconds(0.5)
+                .lineToX(35)
+                //shooting #3
+                .stopAndAdd(Revolver.setTarget(0))
+                .waitSeconds(0.3)
+                .stopAndAdd(Revolver.setTarget(48))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
+                .stopAndAdd(Revolver.setTarget(144))
+                .waitSeconds(0.7)
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
+                .stopAndAdd(Revolver.setTarget(240))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
+                .waitSeconds(1)
+                 */
                 ;
+
+
+
+
+
+
+
+                /*.strafeToLinearHeading(new Vector2d(26.2, -65.3), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(70, -65.3), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(-2, -4), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(14, -8.5), Math.toRadians(0), (pose2dDual, posePath, v) -> 80);
+
+                 */
 
 
         if (isStopRequested()) {
@@ -156,7 +216,9 @@ public final class RRCodetest extends LinearOpMode {
                         move.build(),
                         Revolver.updatePID(), // Always running background PID
                         Revolver.updateTouchAdvance(),
-                        shooter.new UpdateShooter()
+                        shooter.new UpdateShooter(),
+                        turret.track()
+
                 )
         )
         ;
@@ -212,28 +274,7 @@ public final class RRCodetest extends LinearOpMode {
             return timer.seconds() < 0.1;//don't touch
         }
     }
-    public static class Turret implements Action {
-        private boolean initialized = false;
-        ElapsedTime timer;
-        CRServo turret;
-        double power;
 
-        public Turret(CRServo s, double power) {
-            this.turret = s;
-            this.power = power;
-
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            if (!initialized) {
-                timer = new ElapsedTime();
-                turret.setPower(power);
-                initialized = true;
-            }
-            return timer.seconds() < 0.1;//don't touch
-        }
-    }
 
 }
 

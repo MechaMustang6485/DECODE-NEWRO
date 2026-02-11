@@ -1,0 +1,28 @@
+package org.firstinspires.ftc.teamcode.NEWRO.Processors;
+
+import com.arcrobotics.ftclib.controller.PIDFController;
+
+public class PIDClassForTele {
+    private static PIDFController controller = new PIDFController(0, 0, 0, 0);
+
+    public static double p = 0.1, i = 0, d= 0.0002;
+    public static double f = 0.0001 ;
+
+    private static final double ticks_in_degree = 700.0 / 180.0;
+
+    static double power;
+
+    public static double returnRevPID(double target, double revpose) {
+        controller.setPIDF(p, i, d, f);
+
+        double pid = controller.calculate(revpose, target);
+        double ff = Math.cos(Math.toRadians(target / ticks_in_degree)) * f;
+
+        controller.setTolerance(0.5);
+        // controller.atSetPoint(); // optional, only useful if you check the return value elsewhere
+
+        power = pid + ff;
+
+        return power;
+    }
+}

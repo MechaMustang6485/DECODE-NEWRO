@@ -19,7 +19,7 @@ public class Shooter {
     // Hardware
     private DcMotorEx shooterT, shooterB;
 
-    // Tuning Constants (Static so Dashboard sees them)
+
     public static double p = 3, i = 0, d = 0;
     public static double f = 3.6;
 

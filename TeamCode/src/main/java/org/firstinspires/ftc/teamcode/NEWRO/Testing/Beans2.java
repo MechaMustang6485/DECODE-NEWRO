@@ -28,7 +28,7 @@ public class Beans2 extends OpMode {
 //    private double armup = 0.15;
 //    private double armdown = 0;
 
-    public double highVelocity =1500;
+    public double highVelocity = 1500;
     public double lowVelocity = 900;
 
     double curTargetVelocity = highVelocity;
@@ -38,7 +38,7 @@ public class Beans2 extends OpMode {
 
     public static double F = 10.5;
 
-    public static double P = 13;
+    public static double P = 130;
 
     double[] stepSizes = {10.0, 1.0, 0.1, 0.001, 0.0001};
 
