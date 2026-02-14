@@ -23,6 +23,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.NEWRO.Processors.DistanceProcessor;
 import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForAuto;
 
 import java.util.List;
@@ -84,6 +85,8 @@ public class TouchRev3 {
     public static int LIMELIGHT_PIPELINE = 9;
     public static int POLL_HZ = 100;
     public double LIMELIGHT_SCAN_TIMEOUT_SEC = 1.0;
+
+    public DistanceProcessor Distance = new DistanceProcessor();
 
     // =========================
     // TURRET CONFIG (optional)
@@ -192,6 +195,8 @@ public class TouchRev3 {
 
         turretServo.setDirection(CRServo.Direction.REVERSE);
         turretPidTimer.reset();
+
+        Distance.init(hardwareMap);
 
 
         revolver.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
@@ -812,7 +817,7 @@ public class TouchRev3 {
 
                 boolean pressed = touchSensor.isPressed();
 
-                if (touchAdvanceEnabled && !touchLockedOut) {
+                if (touchAdvanceEnabled && !touchLockedOut || Distance.getDistance() <= 3 && !touchLockedOut) {
                     // Rising edge only
                     if (pressed && !touchLastPressed) {
 
@@ -839,6 +844,7 @@ public class TouchRev3 {
                 packet.put("Touch/Locked", touchLockedOut);
                 packet.put("Touch/Balls", touchBallCount);
                 packet.put("Rev/Target", targetPosition);
+                packet.put("Dist", Distance.getDistance());
                 packet.put("Rev/Actual", revolver.getCurrentPosition());
 
                 return true; // keep running forever
