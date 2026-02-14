@@ -18,5 +18,8 @@ public class DistanceTest extends OpMode {
     @Override
     public void loop() {
         telemetry.addData("Distance From Ball: ", Distance.getDistance());
+        if (Distance.getDistance() <= 2) {
+            new IllegalArgumentException(String.format("Hey i saw a ball and decided to commit suicide"));
+        }
     }
 }
