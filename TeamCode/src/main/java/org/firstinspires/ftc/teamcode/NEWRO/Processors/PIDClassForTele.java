@@ -1,7 +1,9 @@
 package org.firstinspires.ftc.teamcode.NEWRO.Processors;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.arcrobotics.ftclib.controller.PIDFController;
 
+@Config
 public class PIDClassForTele {
     private static PIDFController controller = new PIDFController(0, 0, 0, 0);
 

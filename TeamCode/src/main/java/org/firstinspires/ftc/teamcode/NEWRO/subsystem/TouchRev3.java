@@ -20,11 +20,13 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.NEWRO.Processors.DistanceProcessor;
 import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForAuto;
+import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForTele;
 
 import java.util.List;
 
@@ -51,6 +53,8 @@ public class TouchRev3 {
     private int touchBallCount = 3;               // 0..3
     private boolean touchLastPressed = false;     // edge detect
 
+
+    public static double MOTOR_POWER_LIMIT = 0.6;
 
     public static int AT_TARGET_TOL = 8;
 
@@ -245,18 +249,12 @@ public class TouchRev3 {
                     }
                     lastButtonState = pressed;
                 }
+                double power = PIDClassForAuto.returnRevPID(targetPosition, revolver.getCurrentPosition());
 
-                double pwr = PIDClassForAuto.returnRevPID(targetPosition, revolver.getCurrentPosition());
 
-                // clamp
-                if (pwr > 0.6) pwr = 0.6;
-                if (pwr < -0.6) pwr = -0.6;
+                power = Range.clip(power, -MOTOR_POWER_LIMIT, MOTOR_POWER_LIMIT);
 
-                if (Math.abs(targetPosition - revolver.getCurrentPosition()) <= AT_TARGET_TOL) {
-                    revolver.setPower(0);
-                } else {
-                    revolver.setPower(pwr);
-                }
+                revolver.setPower(power);
 
                 packet.put("Rev/SensorEnabled", isSensorEnabled);
                 packet.put("Rev/SlotCount", currentSlotCount);
