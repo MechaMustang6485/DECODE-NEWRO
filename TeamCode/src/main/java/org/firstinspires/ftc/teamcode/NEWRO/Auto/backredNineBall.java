@@ -31,19 +31,18 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret2;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret3;
 
 
 @Config
 @Autonomous
-public final class RRCodetest extends LinearOpMode {
+public final class backredNineBall extends LinearOpMode {
 
     public static int first = 1;
     public static int second = 2;
 
     public  double pshot = 7.3013, ishot = 0, dshot = 0;
     public static double fshot = 2.47;
-    public static double HighVelocityShot = 1275;//3120
+    public static double HighVelocityShot = 1500;//3120
     public double LowVelocityShot = 0;
     public double curTargetVelocity = HighVelocityShot;
 
@@ -84,7 +83,7 @@ public final class RRCodetest extends LinearOpMode {
         Servo arm = hardwareMap.get(Servo.class, "arm");
         DcMotor intake = hardwareMap.get(DcMotorEx.class, "intake");
         Shooter4 shooter = new Shooter4(hardwareMap);
-        Turret3 turret = new Turret3(hardwareMap);
+        Turret2 turret = new Turret2(hardwareMap);
 
 
 
@@ -95,8 +94,7 @@ public final class RRCodetest extends LinearOpMode {
                 //shooting #1
                 // .waitSeconds(10)
                 .stopAndAdd(shooter.setVelo(HighVelocityShot))
-                .strafeToLinearHeading(new Vector2d(-56.23,-12.45), Math.toRadians(2.49), (pose2dDual, posePath, v) -> 80)
-                .waitSeconds(0.3)
+                .waitSeconds(2)
                 .stopAndAdd(Revolver.setTarget(48))
                 .waitSeconds(0.3)
                 .stopAndAdd(new armAction(arm, 0.3))
@@ -112,10 +110,11 @@ public final class RRCodetest extends LinearOpMode {
                 .stopAndAdd(Revolver.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
                 //spike line #1
-                .strafeToLinearHeading(new Vector2d(-59.63, -28.21), Math.toRadians(-40.0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(25.2, 35.6), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .stopAndAdd(Revolver.resetTouch())
-                .strafeToLinearHeading(new Vector2d(-27.98, -54.85), Math.toRadians(-40.0), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(-46.41, -21.14), Math.toRadians(5.08), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(65.1, 34.9), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
+//                .strafeToLinearHeading(new Vector2d(0.3637, 0.728), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(0.1, 0), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.3)
                 .stopAndAdd(new Intake(intake, 0))
                 //shooting #2
@@ -135,8 +134,12 @@ public final class RRCodetest extends LinearOpMode {
                 .stopAndAdd(Revolver.setTarget(0))
                 .stopAndAdd(Revolver.resetTouch())
                 .stopAndAdd(new Back6test.Intake(intake, 1))
-                .strafeToLinearHeading(new Vector2d(-87.86, -47.73), Math.toRadians(-40), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(-56.52, -74.57), Math.toRadians(-40), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(67.6, 5.2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .waitSeconds(0.4)
+                .strafeToLinearHeading(new Vector2d(63.0, 2.1), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                //.strafeToLinearHeading(new Vector2d(57.2, -2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(69.3, 1.8), Math.toRadians(-14.6), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(64.6, 1.9), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.7)
                 .strafeToLinearHeading(new Vector2d(10.1, 0.89), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .stopAndAdd(Revolver.setTarget(240))

@@ -71,43 +71,47 @@ public final class CloseRUnSequence extends LinearOpMode {
         TrajectoryActionBuilder move = drive.actionBuilder(new Pose2d(0, 0, 0))
 
                 .stopAndAdd(shooter.setVelo(HighVelocityShot))
-                .strafeToLinearHeading(new Vector2d(-31.1, -60), Math.toRadians(0), (pose2dDual, posePath, v) -> 82)
-                .waitSeconds(0.5)
+                .strafeToLinearHeading(new Vector2d(-61.73, -16.7), Math.toRadians(0), (pose2dDual, posePath, v) -> 82)
                 .stopAndAdd(seq.setTarget(48))
                 .waitSeconds(0.3)
-                .stopAndAdd(new BackB6.armAction(arm, 0.3))
-                .stopAndAdd(new BackB6.armAction(arm, 0))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(seq.setTarget(144))
-                .waitSeconds(1)
-                .stopAndAdd(new BackB6.armAction(arm, 0.3))
-                .stopAndAdd(new BackB6.armAction(arm, 0))
+                .waitSeconds(0.7)
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(seq.setTarget(240))
                 .waitSeconds(0.7)
-                .stopAndAdd(new BackB6.armAction(arm, 0.3))
-                .stopAndAdd(new BackB6.armAction(arm, 0))
-
-
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(seq.setTarget(0))
-                .stopAndAdd(seq.resetTouch())
+                .strafeToLinearHeading(new Vector2d(-58.2, -14.3), Math.toRadians(0), (pose2dDual, posePath, v) -> 82)
+                .waitSeconds(1.3)
                 .stopAndAdd(new Intake(intake, 1))
-                .strafeToLinearHeading(new Vector2d(13.9, -66.4), Math.toRadians(0), (pose2dDual, posePath, v) -> 82)
+                .strafeToLinearHeading(new Vector2d(-63.067, -25.564), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
 
-                .strafeToLinearHeading(new Vector2d(-31.8, -58.7), Math.toRadians(0), (pose2dDual, posePath, v) -> 82)
-                .waitSeconds(1)
-                .stopAndAdd(seq.setTarget(240))
+                //   .afterTime(first, seq.setTarget(96))
+                //  .afterTime(second, seq.setTarget(192))
+                .stopAndAdd(seq.resetTouch())
+                .strafeToLinearHeading(new Vector2d(-52, -36), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
                 .waitSeconds(0.3)
-                .stopAndAdd(new BackB6.armAction(arm, 0.3))
-                .stopAndAdd(new BackB6.armAction(arm, 0))
+                .strafeToLinearHeading(new Vector2d(-35.9, -52.0), Math.toRadians(-40), (pose2dDual, posePath, v) -> 82)
+                .waitSeconds(0.1)
+                .strafeToLinearHeading(new Vector2d( -55.2, -12.0), Math.toRadians(10.4), (pose2dDual, posePath, v) -> 90)
+                .stopAndAdd(seq.setTarget(48))
+                .waitSeconds(0.3)
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(seq.setTarget(144))
                 .waitSeconds(0.7)
-                .stopAndAdd(new BackB6.armAction(arm, 0.3))
-                .stopAndAdd(new BackB6.armAction(arm, 0))
-                .stopAndAdd(seq.setTarget(48))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
+                .stopAndAdd(seq.setTarget(240))
                 .waitSeconds(0.7)
-                .stopAndAdd(new BackB6.armAction(arm, 0.3))
-                .stopAndAdd(new BackB6.armAction(arm, 0))
-                .strafeToLinearHeading(new Vector2d(-20.3, -93.2), Math.toRadians(0), (pose2dDual, posePath, v) -> 90)
-                .stopAndAdd(new Shooter(shooterB, shooterT, 0))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
+                .strafeToLinearHeading(new Vector2d(-83.3, -51.1), Math.toRadians(-42.9), (pose2dDual, posePath, v) -> 90)
+
                 ;
 
 
@@ -183,6 +187,30 @@ public final class CloseRUnSequence extends LinearOpMode {
             }
             return timer.seconds() < 0.1;//don't touch
         }
+    }
+
+    public static class armAction implements Action {
+        private boolean initialized = false;
+        ElapsedTime timer;
+        Servo arm;
+        double armPos;
+
+        public armAction(Servo s, double position) {
+            this.arm = s;
+            this.armPos = position;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (!initialized) {
+                timer = new ElapsedTime();
+                arm.setPosition(armPos);
+                initialized = true;
+            }
+
+            return timer.seconds() < 0.1;//don't touch
+        }
+
     }
 }
 

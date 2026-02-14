@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode.NEWRO.TeleOP;
 
 
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -34,7 +36,7 @@ public class RedTeleop extends OpMode {
 
     //shooter tuning
     public static double HighVelocityShot = 1500;
-    public static double LowVelocityShot = 1225;
+    public static double LowVelocityShot = 1275;
     public double curTargetVelocity = HighVelocityShot;
     public static double F = 15;
     public static double P = 200;
@@ -85,6 +87,9 @@ public class RedTeleop extends OpMode {
 
     @Override
     public void init(){
+
+
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());//allow to do stuff in dash board
 
         Revolver = new TeleopRev(hardwareMap);
         imu = hardwareMap.get(IMU.class, "imu");
@@ -218,7 +223,7 @@ public class RedTeleop extends OpMode {
             } else if (Revolver.getTarget() == 192) {
                 Revolver.setTargetPosition(288);
             } else {
-                Revolver.goToSlot(0);
+                Revolver.setTargetPosition(0);
             }
         }
 
