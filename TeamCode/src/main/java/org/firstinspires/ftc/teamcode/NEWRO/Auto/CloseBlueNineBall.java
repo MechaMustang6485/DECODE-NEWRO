@@ -30,6 +30,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter4;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev4;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret3;
@@ -81,7 +82,7 @@ public final class CloseBlueNineBall extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
-        TouchRev3 Revolver = new TouchRev3(hardwareMap);
+        TouchRev4 Revolver = new TouchRev4(hardwareMap);
         Servo arm = hardwareMap.get(Servo.class, "arm");
         DcMotor intake = hardwareMap.get(DcMotorEx.class, "intake");
         Shooter4 shooter = new Shooter4(hardwareMap);
@@ -96,7 +97,7 @@ public final class CloseBlueNineBall extends LinearOpMode {
                 //shooting #1
                 // .waitSeconds(10)
                 .stopAndAdd(shooter.setVelo(HighVelocityShot))
-                .strafeToLinearHeading(new Vector2d(-66.46, 15.57), Math.toRadians(1.89), (pose2dDual, posePath, v) -> 82)
+                .strafeToLinearHeading(new Vector2d(-60.46, 15.57), Math.toRadians(1.89), (pose2dDual, posePath, v) -> 82)
                 //.waitSeconds(0.3)
                 .stopAndAdd(Revolver.setTarget(48))
                 .waitSeconds(0.3)
@@ -115,8 +116,8 @@ public final class CloseBlueNineBall extends LinearOpMode {
                 //spike line #1
                 .stopAndAdd(Revolver.resetTouch())
                 .strafeToLinearHeading(new Vector2d(-48.4, 29), Math.toRadians(40),(pose2dDual, posePath, v) -> 82)
-                .strafeToLinearHeading(new Vector2d(-20.13, 53.33), Math.toRadians(40.0), (pose2dDual, posePath, v) -> 20)
-                .strafeToLinearHeading(new Vector2d(-64.1, 15.41), Math.toRadians(7.58), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(-20.13, 53.33), Math.toRadians(40.0), (pose2dDual, posePath, v) -> 10)
+                .strafeToLinearHeading(new Vector2d(-60.1, 15.41), Math.toRadians(7.58), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.3)
                 //shooting #2
                 .stopAndAdd(Revolver.setTarget(240))
@@ -139,7 +140,7 @@ public final class CloseBlueNineBall extends LinearOpMode {
                 .strafeToLinearHeading(new Vector2d(-35.02, 85.57), Math.toRadians(40), (pose2dDual, posePath, v) -> 20)
                 .strafeToLinearHeading(new Vector2d(-49.7, 73.37), Math.toRadians(40), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.1)
-                .strafeToLinearHeading(new Vector2d(-66.55, 15.59), Math.toRadians(-0.032), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(-61.55, 15.59), Math.toRadians(-0.032), (pose2dDual, posePath, v) -> 80)
                 .stopAndAdd(Revolver.setTarget(240))
                 .waitSeconds(0.5)
                 .stopAndAdd(new armAction(arm, 0.3))
