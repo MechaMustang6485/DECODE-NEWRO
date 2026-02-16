@@ -10,7 +10,6 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
@@ -24,17 +23,14 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter3;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter4;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
+import org.firstinspires.ftc.teamcode.NewRo2.subsystem.Shooter4;
+import org.firstinspires.ftc.teamcode.NewRo2.subsystem.TouchRev3;
+import org.firstinspires.ftc.teamcode.NewRo2.subsystem.Turret;
 
 
 @Config
 @Autonomous
-public final class Back6test extends LinearOpMode {
+public final class BackBlueNineBallSeq extends LinearOpMode {
 
     public static int first = 1;
     public static int second = 2;
@@ -92,21 +88,9 @@ public final class Back6test extends LinearOpMode {
         TrajectoryActionBuilder move = drive.actionBuilder(new Pose2d(0, 0, 0))
                 //shooting #1
                 // .waitSeconds(10)
+                .stopAndAdd(Revolver.scanLimelightPattern())
                 .stopAndAdd(shooter.setVelo(HighVelocityShot))
-                .waitSeconds(2)
-                .stopAndAdd(Revolver.setTarget(48))
-                .waitSeconds(0.3)
-                .stopAndAdd(new armAction(arm, 0.3))
-                .stopAndAdd(new armAction(arm, 0))
-                .stopAndAdd(Revolver.setTarget(144))
-                .waitSeconds(0.7)
-                .stopAndAdd(new armAction(arm, 0.3))
-                .stopAndAdd(new armAction(arm, 0))
-                .stopAndAdd(Revolver.setTarget(240))
-                .waitSeconds(0.7)
-                .stopAndAdd(new armAction(arm, 0.3))
-                .stopAndAdd(new armAction(arm, 0))
-                .stopAndAdd(Revolver.setTarget(0))
+                .stopAndAdd(Revolver.runSequence3ShotsNoShooter())
                 .stopAndAdd(new Intake(intake, 1))
                 //spike line #1
                 .strafeToLinearHeading(new Vector2d(21.9, -34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
@@ -114,23 +98,12 @@ public final class Back6test extends LinearOpMode {
                 .strafeToLinearHeading(new Vector2d(59, -34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
 //                .strafeToLinearHeading(new Vector2d(0.3637, 0.728), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .strafeToLinearHeading(new Vector2d(13.32, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .stopAndAdd(Revolver.scanBall())
                 .waitSeconds(0.3)
                 .stopAndAdd(new Intake(intake, 0))
                 //shooting #2
-                .stopAndAdd(Revolver.setTarget(240))
-                .waitSeconds(0.5)
-                .stopAndAdd(new armAction(arm, 0.3))
-                .stopAndAdd(new armAction(arm, 0))
-                .stopAndAdd(Revolver.setTarget(144))
-                .waitSeconds(0.7)
-                .stopAndAdd(new armAction(arm, 0.3))
-                .stopAndAdd(new armAction(arm, 0))
-                .stopAndAdd(Revolver.setTarget(48))
-                .waitSeconds(0.7)
-                .stopAndAdd(new armAction(arm, 0.3))
-                .stopAndAdd(new armAction(arm, 0))
-                .waitSeconds(0.3)
-                .stopAndAdd(Revolver.setTarget(0))
+                .stopAndAdd(Revolver.scanShot())
+                .waitSeconds(2)
                 .stopAndAdd(Revolver.resetTouch())
                 .stopAndAdd(new Intake(intake, 1))
                 .strafeToLinearHeading(new Vector2d(58.2, -11.6), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)

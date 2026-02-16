@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.NewRo2.Auto;
+package org.firstinspires.ftc.teamcode.NewRo2.AutoTest;
 
 
 import androidx.annotation.NonNull;
@@ -26,8 +26,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.RevolverRR;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchSensorRR;
 
 @Disabled
 @Config

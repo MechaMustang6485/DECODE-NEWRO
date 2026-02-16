@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.NewRo2.Auto;
+package org.firstinspires.ftc.teamcode.NewRo2.AutoTest;
 
 
 import androidx.annotation.NonNull;
@@ -27,7 +27,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
 
 @Config
 @Autonomous//working
-public final class CloseBSeqTest extends LinearOpMode {
+public final class CloseBSeq extends LinearOpMode {
     public static double first = 0.9;
     public static double second = 2.5;
 
@@ -78,11 +78,17 @@ public final class CloseBSeqTest extends LinearOpMode {
                 .stopAndAdd(seq.setTarget(0))
                 .stopAndAdd(new Intake(intake, 1))
                 .strafeToLinearHeading(new Vector2d(-44.32, 36), Math.toRadians(38),(pose2dDual, posePath, v) -> 82)
-                .stopAndAdd(seq.resetTouch())
+
+                .afterTime(first,seq.setTarget(96))
+                .afterTime(second,seq.setTarget(192))
+                .lineToX(-42)
+                .waitSeconds(0.3)
+                .lineToX(-40)
+                .waitSeconds(0.2)
                 .lineToX(-30)
-              //  .strafeToLinearHeading(new Vector2d(-30, 26), Math.toRadians(38), ((pose2dDual, posePath, v) -> 40))
                // .stopAndAdd(new Shooter(shooterB,shooterT,curTargetVelocity))
                 .strafeToLinearHeading(new Vector2d(-61.89, 15.29), Math.toRadians(2), (pose2dDual, posePath, v) -> 82)
+                .waitSeconds(0.2)
                 .stopAndAdd(seq.runSequence3ShotsNoShooter())
                 .stopAndAdd(new Shooter(shooterB, shooterT, 0))
 
@@ -103,7 +109,6 @@ public final class CloseBSeqTest extends LinearOpMode {
                 new ParallelAction(
                         move.build(),
                         seq.updatePID(),
-                        seq.updateTouchAdvance(),
                         shooter.new UpdateShooter()
         )
         );
