@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.NEWRO.Testing;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.NEWRO.Processors.DistanceProcessor;
 
 @TeleOp
@@ -19,8 +18,9 @@ public class DistanceTest extends OpMode {
     @Override
     public void loop() {
         telemetry.addData("Distance From Ball: ", Distance.getDistance());
-        if (Distance.getDistance() <= 2) {
-            telemetry.addLine("GAY");
+        if (Distance.getDistance() <= 3) {
+            telemetry.addLine("Hi");
+            telemetry.update();
         }
     }
 }

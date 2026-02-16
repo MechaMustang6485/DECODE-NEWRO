@@ -138,8 +138,8 @@ public class DecodeDriveRapidNo extends OpMode {
         rightBack = hardwareMap.get(DcMotor.class, "Br");
         leftBack = hardwareMap.get(DcMotor.class, "Bl");
 
-        leftFront.setMode(com.qualcomm.robotcore.hardware.DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftFront.setMode(com.qualcomm.robotcore.hardware.DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBack.setDirection(DcMotorSimple.Direction.REVERSE);

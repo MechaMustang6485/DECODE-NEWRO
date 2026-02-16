@@ -48,6 +48,8 @@ public class BlueTeleop extends OpMode {
     public static double ARM_UP = 0.3, ARM_DOWN = 0.0;
     private ElapsedTime RevolverTimer = new ElapsedTime();
     private boolean RevovlerMoving = false;
+    private ElapsedTime armTimer = new ElapsedTime();
+    private boolean armMovingAuto = false;
 
 
     //parts of robot
@@ -191,27 +193,22 @@ public class BlueTeleop extends OpMode {
                 shooterB.setVelocity(900);
             }
         }
-/*
-        if (gamepad2.yWasPressed()) {//shoot position
-            if (target == 0|| target == 96 || target == 192 || target == 48) {
-                target = 144;
-            } else if (target == 144) {
-                target = 240;
 
-            }else {
-                target = shoot;
+        if (gamepad2.dpadUpWasPressed()) {
+            armMovingAuto = true;
+            armTimer.reset();
+        }
+
+        if (armMovingAuto) {
+            if (armTimer.seconds() < 0.4) {
+                arm.setPosition(ARM_UP);
+            } else if (armTimer.seconds() < 0.8) {
+                arm.setPosition(ARM_DOWN);
+            } else {
+                armMovingAuto = false;
             }
         }
-    if (gamepad2.xWasPressed()) {
-            if (target == 0|| target == 144 || target == 240) {
-                target = intake;
-            } else if (target == 96) {
-                target = 192;
-            } else {
-                target = home;
-            }
 
- */
         if (gamepad2.xWasPressed()) {
             if (Revolver.getTarget() == 0) {
                 Revolver.setTargetPosition(96);
@@ -224,7 +221,7 @@ public class BlueTeleop extends OpMode {
             }
         }
         if (gamepad2.aWasPressed()) {
-            if (Revolver.getTarget() == 0||Revolver.getTarget() == 96||Revolver.getTarget() == 192||Revolver.getTarget() == 288) {
+            if (Revolver.getTarget() == 0|| Revolver.getTarget() == 96||Revolver.getTarget() == 192||Revolver.getTarget() == 288) {
                 Revolver.setTargetPosition(48);
             } else if (Revolver.getTarget() == 48) {
                 Revolver.setTargetPosition(144);

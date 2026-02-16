@@ -24,14 +24,12 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.NEWRO.Processors.DistanceProcessor;
 import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForAuto;
-import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForTele;
 
 import java.util.List;
 
 @Config
-public class TouchRev3 {
+public class TouchRev4 {
 
     // =========================
     // REVOLVER CONFIG
@@ -89,8 +87,6 @@ public class TouchRev3 {
     public static int LIMELIGHT_PIPELINE = 9;
     public static int POLL_HZ = 100;
     public double LIMELIGHT_SCAN_TIMEOUT_SEC = 1.0;
-
-    public DistanceProcessor Distance = new DistanceProcessor();
 
     // =========================
     // TURRET CONFIG (optional)
@@ -186,7 +182,7 @@ public class TouchRev3 {
     // =========================
     // CONSTRUCTOR
     // =========================
-    public TouchRev3(HardwareMap hardwareMap) {
+    public TouchRev4(HardwareMap hardwareMap) {
         revolver = hardwareMap.get(DcMotorEx.class, "revolver");
         touchSensor = hardwareMap.get(TouchSensor.class, "touch");
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
@@ -196,12 +192,6 @@ public class TouchRev3 {
         // Optional turret hardware (OpModeTurret names)
         turretServo = hardwareMap.get(CRServo.class, "Turret");
         turretEncoderMotor = hardwareMap.get(DcMotorEx.class, "Fl");
-
-        turretServo.setDirection(CRServo.Direction.REVERSE);
-        turretPidTimer.reset();
-
-        Distance.init(hardwareMap);
-
 
         revolver.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         revolver.setDirection(DcMotorEx.Direction.FORWARD);
@@ -239,7 +229,7 @@ public class TouchRev3 {
         return new Action() {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-/*
+
                 // Touch loading ONLY when enabled and not sequencing
                 if (isSensorEnabled && !sequenceRunning) {
                     boolean pressed = touchSensor.isPressed();
@@ -249,8 +239,6 @@ public class TouchRev3 {
                     }
                     lastButtonState = pressed;
                 }
-
- */
 
                 double power = PIDClassForAuto.returnRevPID(targetPosition, revolver.getCurrentPosition());
 
@@ -411,6 +399,24 @@ public class TouchRev3 {
     // =========================
     // TURRET: TRACK (RUN FOREVER IN ParallelAction)
     // =========================
+    public Action turretTrack() {
+        return new Action() {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    turretPidTimer.reset();
+                    initialized = true;
+                }
+                runTurretLogic();
+
+                packet.put("Turret/Enc", turretEncoderMotor.getCurrentPosition());
+                packet.put("Turret/Pwr", turretServo.getPower());
+                return true;
+            }
+        };
+    }
 
     public Action turretStop() {
         return packet -> {
@@ -805,6 +811,30 @@ public class TouchRev3 {
         }
     }
 
+    private double calculateTurretPID(double error) {
+        double dt = turretPidTimer.seconds();
+        if (dt <= 0) dt = 0.02;
+        turretPidTimer.reset();
+
+        if (Math.abs(error) < turretTolerance) {
+            turretLastError = 0;
+            return 0;
+        }
+
+        double P = turretP * error;
+        double D = turretD * (error - turretLastError) / dt;
+        turretLastError = error;
+
+        double out = P + D;
+
+        if (Math.abs(out) < turretMinPower) out = Math.signum(out) * turretMinPower;
+
+        if (out > turretMaxPower) out = turretMaxPower;
+        if (out < -turretMaxPower) out = -turretMaxPower;
+
+        return out;
+    }
+
     public Action updateTouchAdvance() {
         return new Action() {
             @Override
@@ -818,7 +848,7 @@ public class TouchRev3 {
 
                 boolean pressed = touchSensor.isPressed();
 
-                if (touchAdvanceEnabled && !touchLockedOut || Distance.getDistance() <= 3 && !touchLockedOut) {
+                if (touchAdvanceEnabled && !touchLockedOut) {
                     // Rising edge only
                     if (pressed && !touchLastPressed) {
 
@@ -845,7 +875,6 @@ public class TouchRev3 {
                 packet.put("Touch/Locked", touchLockedOut);
                 packet.put("Touch/Balls", touchBallCount);
                 packet.put("Rev/Target", targetPosition);
-                packet.put("Dist", Distance.getDistance());
                 packet.put("Rev/Actual", revolver.getCurrentPosition());
 
                 return true; // keep running forever
@@ -861,107 +890,6 @@ public class TouchRev3 {
             return false;
         };
     }
-
-    // =========================
-// TURRET: TRACK (RUN FOREVER IN ParallelAction) - TeleOp-style
-// =========================
-    private boolean turretTrackingEnabled = true;
-
-    public Action turretTrack() {
-        return new Action() {
-            private boolean initialized = false;
-
-            @Override
-            public boolean run(@NonNull TelemetryPacket packet) {
-                if (!initialized) {
-                    turretPidTimer.reset();
-                    turretLastError = 0;
-                    initialized = true;
-                }
-
-                if (turretTrackingEnabled) {
-                    runTurretLogic(packet);
-                } else {
-                    turretServo.setPower(0);
-                }
-
-                packet.put("Turret/Enabled", turretTrackingEnabled);
-                packet.put("Turret/Enc", turretEncoderMotor.getCurrentPosition());
-                packet.put("Turret/Pwr", turretServo.getPower());
-                return true; // IMPORTANT: keep running forever
-            }
-        };
-    }
-
-    public Action enableTurretTrack() {
-        return p -> { turretTrackingEnabled = true; return false; };
-    }
-
-    public Action disableTurretTrack() {
-        return p -> { turretTrackingEnabled = false; turretServo.setPower(0); return false; };
-    }
-
-    private void runTurretLogic(@NonNull TelemetryPacket packet) {
-        // Push robot yaw to Limelight (RADIANS like your scan method)
-        YawPitchRollAngles ypr = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(ypr.getYaw(AngleUnit.RADIANS));
-
-        LLResult llResult = limelight.getLatestResult();
-
-        // Only track when we truly have a valid result
-        if (llResult != null && llResult.isValid()) {
-            double tx = llResult.getTx();
-
-            // TeleOp-style PID: power is based on tx directly (no extra negative flip)
-            double power = calculateTurretPID(tx);
-
-            // Safety limits using encoder motor position (like GoodTurret)
-            int pos = turretEncoderMotor.getCurrentPosition();
-            if (turretLimits) {
-                if (pos >= turretMaxEnc && power > 0) power = 0;
-                else if (pos <= turretMinEnc && power < 0) power = 0;
-            }
-
-            turretServo.setPower(power);
-
-            packet.put("Turret/Tx", tx);
-            packet.put("Turret/HasTarget", true);
-        } else {
-            turretServo.setPower(0);
-            packet.put("Turret/HasTarget", false);
-        }
-    }
-
-    // TeleOp-style PD controller (matches your GoodTurret behavior)
-// NOTE: uses turretP, turretD, turretMaxPower, turretMinPower, turretTolerance
-    private double calculateTurretPID(double error) {
-        double dt = turretPidTimer.seconds();
-        if (dt <= 0) dt = 0.02;
-        turretPidTimer.reset();
-
-        if (Math.abs(error) < turretTolerance) {
-            turretLastError = 0;
-            return 0;
-        }
-
-        double P = turretP * error;
-        double D = turretD * (error - turretLastError) / dt;
-        turretLastError = error;
-
-        double out = P + D;
-
-        // Minimum power clamp (stiction)
-        if (Math.abs(out) < turretMinPower) {
-            out = Math.signum(out) * turretMinPower;
-        }
-
-        // Max power clamp
-        if (out > turretMaxPower) out = turretMaxPower;
-        if (out < -turretMaxPower) out = -turretMaxPower;
-
-        return out;
-    }
-
 
     public Action disableTouchAdvance() { return p -> { touchAdvanceEnabled = false; return false; }; }
     public Action enableTouchAdvance()  { return p -> { touchAdvanceEnabled = true;  return false; }; }

@@ -36,7 +36,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret3;
 
 @Config
 @Autonomous
-public final class RRCodetest extends LinearOpMode {
+public final class CloseRedNineBall extends LinearOpMode {
 
     public static int first = 1;
     public static int second = 2;

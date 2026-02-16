@@ -15,20 +15,19 @@ import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForTele;
 @Config
 public class TeleopRev {
 
-    // --- Configurable Constants ---
+
     public static int TICKS_PER_SLOT = 96;
     public static int MAX_SLOTS = 3;
     public static int MAX_POSITION = 288;
-    public static int AT_TARGET_TOL = 8;
     public static double MOTOR_POWER_LIMIT = 0.6;
 
     private DcMotorEx Intake;
 
-    // --- Hardware ---
+
     private final DcMotorEx revolver;
     private final TouchSensor touchSensor;
 
-    // --- State Variables ---
+
     private int targetPosition = 0;
     private int ballCount = 0;
     private boolean lastTouchState = false;
@@ -55,7 +54,7 @@ public class TeleopRev {
     }
 
     public void setTargetPosition(int ticks) {
-        // We clip it to a slightly higher max or remove the clip for the shoot sequence
+
         this.targetPosition = ticks;
     }
 
@@ -80,13 +79,13 @@ public class TeleopRev {
 
         double power = PIDClassForTele.returnRevPID(targetPosition, revolver.getCurrentPosition());
 
-        // Safety clip
+
         power = Range.clip(power, -MOTOR_POWER_LIMIT, MOTOR_POWER_LIMIT);
 
       revolver.setPower(power);
     }
 
-    // --- Manual Controls ---
+
 
     /**
      * Set target based on slot index (0, 1, 2, or 3)
