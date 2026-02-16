@@ -107,7 +107,7 @@ public final class backblueNineBall extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(0))
-                .stopAndAdd(new Intake(intake, 1))
+                .stopAndAdd(new Intake(intake, -1))
                 //spike line #1
                 .strafeToLinearHeading(new Vector2d(21.9, -34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .stopAndAdd(Revolver.resetTouch())
@@ -132,7 +132,7 @@ public final class backblueNineBall extends LinearOpMode {
                 .waitSeconds(0.3)
                 .stopAndAdd(Revolver.setTarget(0))
                 .stopAndAdd(Revolver.resetTouch())
-                .stopAndAdd(new Intake(intake, 1))
+                .stopAndAdd(new Intake(intake, -1))
                 .strafeToLinearHeading(new Vector2d(58.2, -11.6), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.4)
                 .strafeToLinearHeading(new Vector2d(54.2, -2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)

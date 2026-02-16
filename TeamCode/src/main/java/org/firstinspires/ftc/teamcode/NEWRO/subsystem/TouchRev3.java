@@ -24,9 +24,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.NEWRO.Processors.DistanceProcessor;
 import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForAuto;
-import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForTele;
 
 import java.util.List;
 
@@ -45,19 +43,10 @@ public class TouchRev3 {
     public static int POS_SHOOT1 = 144;
     public static int POS_SHOOT2 = 240;
 
-    // =========================
-// TOUCH-ADVANCE (AUTO LOAD) STATE
-// =========================
-    private boolean touchAdvanceEnabled = true;   // can be toggled
-    private boolean touchLockedOut = false;       // true after 3 balls
-    private int touchBallCount = 3;               // 0..3
-    private boolean touchLastPressed = false;     // edge detect
-
-
     public static double MOTOR_POWER_LIMIT = 0.6;
-
     public static int AT_TARGET_TOL = 8;
 
+    // How long we wait to arrive (if not at target yet)
     public double MOVE_TIMEOUT_SEC = 0.45;
 
     // =========================
@@ -68,14 +57,14 @@ public class TouchRev3 {
     public static float PURPLE_H_MIN = 181;
     public static float PURPLE_H_MAX = 255;
 
-    public double VALIDATE_DELAY_SEC = 0.40;      // wait at shoot pos before reading
-    public double UNKNOWN_SCAN_SEC = 0.50;        // if UNKNOWN, keep sampling for this long
+    // wait at shoot pos before reading
+    public double VALIDATE_DELAY_SEC = 0.40;
+
+    // if UNKNOWN, keep sampling for this long (YOU asked: 0.7s)
+    public double UNKNOWN_SCAN_SEC = 0.70;
 
     // Only validate first 2 balls (3rd assumed correct)
     public static boolean ONLY_VALIDATE_FIRST_TWO = true;
-
-    // Extra delay AFTER validation passes and BEFORE arm up (your “rev-up” window)
-    public double PRE_SHOT_REV_DELAY_SEC = 0.50;
 
     // Arm timing
     public double ARM_UPDOWN_SEC = 0.20;
@@ -90,7 +79,6 @@ public class TouchRev3 {
     public static int POLL_HZ = 100;
     public double LIMELIGHT_SCAN_TIMEOUT_SEC = 1.0;
 
-    public DistanceProcessor Distance = new DistanceProcessor();
 
     // =========================
     // TURRET CONFIG (optional)
@@ -123,7 +111,6 @@ public class TouchRev3 {
     // Turret (optional)
     public final CRServo turretServo;
     private final DcMotorEx turretEncoderMotor;
-
     private final IMU imu;
 
     // =========================
@@ -142,16 +129,15 @@ public class TouchRev3 {
     private volatile int lastSequenceId = -1;
 
     // =========================
-    // SEQUENCE STATE (PERSISTENT FIELDS)
+    // SEQUENCE STATE (PERSISTENT)
     // =========================
     private boolean sequenceRunning = false;
 
-    private enum S {
+    private enum SeqState {
         INIT,
         MOVE_TO_TARGET,
         WAIT_VALIDATE,
         READ_VALIDATE,
-        PRE_SHOT_REV_DELAY,
         ARM_UP_STATE,
         ARM_DOWN_STATE,
         POST_SHOT_SETTLE,
@@ -160,7 +146,7 @@ public class TouchRev3 {
         DONE
     }
 
-    private S seqState = S.INIT;
+    private SeqState seqState = SeqState.INIT;
 
     private int shotsDone = 0;
     private int currentIdx = 0;
@@ -179,9 +165,51 @@ public class TouchRev3 {
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
 
+    // =========================
+    // MEMORY SCAN (NEW)
+    // =========================
+    private final BallColor[] slotColorMem = new BallColor[]{BallColor.UNKNOWN, BallColor.UNKNOWN, BallColor.UNKNOWN};
+    private boolean memValid = false;
+
+    private enum MemScanState {
+        INIT,
+        MOVE_SLOT,
+        WAIT_DELAY,
+        SAMPLE,
+        NEXT_SLOT,
+        RETURN_INTAKE,
+        DONE
+    }
+
+    private MemScanState memScanState = MemScanState.INIT;
+    private int memScanIdx = 0;
+    private final ElapsedTime memTimer = new ElapsedTime();
+    private final ElapsedTime memUnknownTimer = new ElapsedTime();
+    private BallColor memLastNonUnknown = BallColor.UNKNOWN;
+
+    private enum MemShootState {
+        INIT,
+        MOVE_TO_SLOT,
+        ARM_UP,
+        ARM_DOWN,
+        SETTLE,
+        NEXT,
+        RETURN_INTAKE,
+        DONE
+    }
+
+    private MemShootState memShootState = MemShootState.INIT;
+    private int memShotsDone = 0;
+    private int memTargetIdx = 0;
+    private int memTargetPos = POS_SHOOT0;
+    private final boolean[] memShotMask = new boolean[]{false, false, false};
+    private final ElapsedTime memShootTimer = new ElapsedTime();
+    private final ElapsedTime memMoveTimer = new ElapsedTime();
+
     // Turret PID runtime
     private double turretLastError = 0;
     private final ElapsedTime turretPidTimer = new ElapsedTime();
+    private boolean turretTrackingEnabled = true;
 
     // =========================
     // CONSTRUCTOR
@@ -193,14 +221,11 @@ public class TouchRev3 {
         color4 = hardwareMap.get(NormalizedColorSensor.class, "color4");
         arm = hardwareMap.get(Servo.class, "arm");
 
-        // Optional turret hardware (OpModeTurret names)
         turretServo = hardwareMap.get(CRServo.class, "Turret");
         turretEncoderMotor = hardwareMap.get(DcMotorEx.class, "Fl");
 
         turretServo.setDirection(CRServo.Direction.REVERSE);
         turretPidTimer.reset();
-
-        Distance.init(hardwareMap);
 
 
         revolver.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
@@ -230,6 +255,7 @@ public class TouchRev3 {
         isSensorEnabled = false;
 
         resetSequenceState();
+        clearMemoryScan();
     }
 
     // =========================
@@ -239,7 +265,8 @@ public class TouchRev3 {
         return new Action() {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-/*
+
+                /*
                 // Touch loading ONLY when enabled and not sequencing
                 if (isSensorEnabled && !sequenceRunning) {
                     boolean pressed = touchSensor.isPressed();
@@ -250,22 +277,25 @@ public class TouchRev3 {
                     lastButtonState = pressed;
                 }
 
- */
+                 */
 
                 double power = PIDClassForAuto.returnRevPID(targetPosition, revolver.getCurrentPosition());
-
-
                 power = Range.clip(power, -MOTOR_POWER_LIMIT, MOTOR_POWER_LIMIT);
-
                 revolver.setPower(power);
 
                 packet.put("Rev/SensorEnabled", isSensorEnabled);
                 packet.put("Rev/SlotCount", currentSlotCount);
                 packet.put("Rev/Target", targetPosition);
                 packet.put("Rev/Actual", revolver.getCurrentPosition());
+
                 packet.put("Seq/Running", sequenceRunning);
                 packet.put("LL/LastID", lastSequenceId);
                 packet.put("LL/Pattern", desiredPattern.toString());
+
+                packet.put("Mem/Valid", memValid);
+                packet.put("Mem/S0", slotColorMem[0].toString());
+                packet.put("Mem/S1", slotColorMem[1].toString());
+                packet.put("Mem/S2", slotColorMem[2].toString());
 
                 return true;
             }
@@ -409,9 +439,8 @@ public class TouchRev3 {
     public int getLastSequenceId() { return lastSequenceId; }
 
     // =========================
-    // TURRET: TRACK (RUN FOREVER IN ParallelAction)
+    // TURRET ACTIONS
     // =========================
-
     public Action turretStop() {
         return packet -> {
             turretServo.setPower(0);
@@ -448,14 +477,298 @@ public class TouchRev3 {
         };
     }
 
+    public Action turretTrack() {
+        return new Action() {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    turretPidTimer.reset();
+                    turretLastError = 0;
+                    initialized = true;
+                }
+
+                if (turretTrackingEnabled) {
+                    runTurretLogic(packet);
+                } else {
+                    turretServo.setPower(0);
+                }
+
+                packet.put("Turret/Enabled", turretTrackingEnabled);
+                packet.put("Turret/Enc", turretEncoderMotor.getCurrentPosition());
+                packet.put("Turret/Pwr", turretServo.getPower());
+                return true;
+            }
+        };
+    }
+
+    public Action enableTurretTrack() {
+        return p -> { turretTrackingEnabled = true; return false; };
+    }
+
+    public Action disableTurretTrack() {
+        return p -> { turretTrackingEnabled = false; turretServo.setPower(0); return false; };
+    }
+
     // =========================
-    // SEQUENCE (NO SHOOTER CONTROL — RR DOES THAT)
+    // NEW: scanBall() — rotate through shooter slots and remember colors
+    // =========================
+    public Action scanBall() {
+        return new Action() {
+            @Override
+            public boolean run(@NonNull TelemetryPacket p) {
+
+                sequenceRunning = true; // blocks touch load while scanning (same behavior as sequence)
+
+                p.put("MemScan/State", memScanState.toString());
+                p.put("MemScan/Idx", memScanIdx);
+                p.put("Mem/Valid", memValid);
+
+                switch (memScanState) {
+                    case INIT: {
+                        clearMemoryScan();
+
+                        memScanIdx = 0;
+                        memScanState = MemScanState.MOVE_SLOT;
+
+                        memTargetToIndex(memScanIdx);
+                        memMoveTimer.reset();
+                        memTimer.reset();
+                        memUnknownTimer.reset();
+                        memLastNonUnknown = BallColor.UNKNOWN;
+                        break;
+                    }
+
+                    case MOVE_SLOT: {
+                        // wait arrive or timeout
+                        if (atTarget(memTargetPos) || memMoveTimer.seconds() >= MOVE_TIMEOUT_SEC) {
+                            memTimer.reset();
+                            memUnknownTimer.reset();
+                            memLastNonUnknown = BallColor.UNKNOWN;
+                            memScanState = MemScanState.WAIT_DELAY;
+                        }
+                        break;
+                    }
+
+                    case WAIT_DELAY: {
+                        if (memTimer.seconds() >= VALIDATE_DELAY_SEC) {
+                            memUnknownTimer.reset();
+                            memLastNonUnknown = BallColor.UNKNOWN;
+                            memScanState = MemScanState.SAMPLE;
+                        }
+                        break;
+                    }
+
+                    case SAMPLE: {
+                        BallColor seen = readColor4();
+                        if (seen != BallColor.UNKNOWN) memLastNonUnknown = seen;
+
+                        // if unknown, keep sampling up to UNKNOWN_SCAN_SEC
+                        if (seen == BallColor.UNKNOWN && memUnknownTimer.seconds() < UNKNOWN_SCAN_SEC) {
+                            break;
+                        }
+
+                        if (seen == BallColor.UNKNOWN && memLastNonUnknown != BallColor.UNKNOWN) {
+                            seen = memLastNonUnknown;
+                        }
+
+                        slotColorMem[memScanIdx] = seen;
+
+                        p.put("MemScan/Seen", seen.toString());
+                        p.put("MemScan/Hue", getHue(color4));
+
+                        memScanState = MemScanState.NEXT_SLOT;
+                        break;
+                    }
+
+                    case NEXT_SLOT: {
+                        memScanIdx++;
+                        if (memScanIdx >= 3) {
+                            // valid only if none UNKNOWN
+                            memValid = (slotColorMem[0] != BallColor.UNKNOWN
+                                    && slotColorMem[1] != BallColor.UNKNOWN
+                                    && slotColorMem[2] != BallColor.UNKNOWN);
+
+                            setTargetInternal(POS_INTAKE);
+                            memTargetPos = POS_INTAKE;
+                            memMoveTimer.reset();
+                            memScanState = MemScanState.RETURN_INTAKE;
+                            break;
+                        }
+
+                        memTargetToIndex(memScanIdx);
+                        memMoveTimer.reset();
+                        memTimer.reset();
+                        memUnknownTimer.reset();
+                        memLastNonUnknown = BallColor.UNKNOWN;
+                        memScanState = MemScanState.MOVE_SLOT;
+                        break;
+                    }
+
+                    case RETURN_INTAKE: {
+                        if (atTarget(POS_INTAKE) || memMoveTimer.seconds() >= MOVE_TIMEOUT_SEC) {
+                            memScanState = MemScanState.DONE;
+                        }
+                        break;
+                    }
+
+                    case DONE: {
+                        sequenceRunning = false;
+                        memScanState = MemScanState.INIT;
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        };
+    }
+
+    // =========================
+    // NEW: scanShot() — uses memory (from scanBall) and shoots immediately (no color read)
+    // RR controls shooter motors — this only moves revolver + arm.
+    // =========================
+    public Action scanShot() {
+        return new Action() {
+            @Override
+            public boolean run(@NonNull TelemetryPacket p) {
+
+                sequenceRunning = true;
+
+                p.put("MemShoot/State", memShootState.toString());
+                p.put("MemShoot/ShotsDone", memShotsDone);
+                p.put("Mem/Valid", memValid);
+                p.put("Mem/S0", slotColorMem[0].toString());
+                p.put("Mem/S1", slotColorMem[1].toString());
+                p.put("Mem/S2", slotColorMem[2].toString());
+                p.put("Pattern", desiredPattern.toString());
+
+                switch (memShootState) {
+
+                    case INIT: {
+                        // If memory not valid, bail to normal scanning+shooting sequence
+                        // (you said “keep the other one that scans and shoots in case”)
+                        if (!memValid) {
+                            // Stop this action immediately; caller can run runSequence3ShotsNoShooter() next.
+                            sequenceRunning = false;
+                            memShootState = MemShootState.INIT;
+                            return false;
+                        }
+
+                        memShotMask[0] = memShotMask[1] = memShotMask[2] = false;
+                        memShotsDone = 0;
+
+                        // Choose first target slot based on pattern and memory
+                        memTargetIdx = chooseSlotForExpected(expectedForShot(desiredPattern, 0), memShotMask);
+                        if (memTargetIdx == -1) memTargetIdx = firstUnshot(memShotMask);
+
+                        memTargetPos = posFromIdx(memTargetIdx);
+                        setTargetInternal(memTargetPos);
+
+                        memMoveTimer.reset();
+                        memShootTimer.reset();
+                        memShootState = MemShootState.MOVE_TO_SLOT;
+                        break;
+                    }
+
+                    case MOVE_TO_SLOT: {
+                        if (atTarget(memTargetPos) || memMoveTimer.seconds() >= MOVE_TIMEOUT_SEC) {
+                            memShootTimer.reset();
+                            memShootState = MemShootState.ARM_UP;
+                        }
+                        break;
+                    }
+
+                    case ARM_UP: {
+                        arm.setPosition(ARM_UP);
+                        if (memShootTimer.seconds() >= ARM_UPDOWN_SEC) {
+                            memShootTimer.reset();
+                            memShootState = MemShootState.ARM_DOWN;
+                        }
+                        break;
+                    }
+
+                    case ARM_DOWN: {
+                        arm.setPosition(ARM_DOWN);
+                        if (memShootTimer.seconds() >= ARM_UPDOWN_SEC) {
+                            memShootTimer.reset();
+                            memShootState = MemShootState.SETTLE;
+                        }
+                        break;
+                    }
+
+                    case SETTLE: {
+                        if (memShootTimer.seconds() >= BALL_SETTLE_SEC) {
+                            memShootState = MemShootState.NEXT;
+                        }
+                        break;
+                    }
+
+                    case NEXT: {
+                        memShotMask[memTargetIdx] = true;
+                        memShotsDone++;
+
+                        if (memShotsDone >= 3) {
+                            setTargetInternal(POS_INTAKE);
+                            memTargetPos = POS_INTAKE;
+                            memMoveTimer.reset();
+                            memShootState = MemShootState.RETURN_INTAKE;
+                            break;
+                        }
+
+                        // For shot 1 and 2, pick expected slot by memory.
+                        // For shot 3, just pick the remaining unshot slot.
+                        if (ONLY_VALIDATE_FIRST_TWO && memShotsDone >= 2) {
+                            memTargetIdx = firstUnshot(memShotMask);
+                        } else {
+                            BallColor exp = expectedForShot(desiredPattern, memShotsDone);
+                            int idx = chooseSlotForExpected(exp, memShotMask);
+                            memTargetIdx = (idx != -1) ? idx : firstUnshot(memShotMask);
+                        }
+
+                        if (memTargetIdx == -1) {
+                            setTargetInternal(POS_INTAKE);
+                            memTargetPos = POS_INTAKE;
+                            memMoveTimer.reset();
+                            memShootState = MemShootState.RETURN_INTAKE;
+                            break;
+                        }
+
+                        memTargetPos = posFromIdx(memTargetIdx);
+                        setTargetInternal(memTargetPos);
+                        memMoveTimer.reset();
+                        memShootTimer.reset();
+                        memShootState = MemShootState.MOVE_TO_SLOT;
+                        break;
+                    }
+
+                    case RETURN_INTAKE: {
+                        if (atTarget(POS_INTAKE) || memMoveTimer.seconds() >= MOVE_TIMEOUT_SEC) {
+                            memShootState = MemShootState.DONE;
+                        }
+                        break;
+                    }
+
+                    case DONE: {
+                        arm.setPosition(ARM_DOWN);
+                        sequenceRunning = false;
+                        memShootState = MemShootState.INIT;
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        };
+    }
+
+    // =========================
+    // ORIGINAL: scan+shoot sequence (NO SHOOTER CONTROL — RR DOES THAT)
     // - Uses ONLY color4
     // - Only validates first 2 balls (3rd assumed correct)
     // - If UNKNOWN: sample for 0.7s at shoot position
-    // - NEVER counts a shot unless it validated (or is 3rd ball)
-    // - “No 2-slot jump”: mismatch search is +1 preference
-    // - “Backtrack 1”: next shot prefers -1 so it re-tries the skipped one
+    // - No “revup delay” (removed)
     // =========================
     public Action runSequence3ShotsNoShooter() {
         return new Action() {
@@ -488,7 +801,7 @@ public class TouchRev3 {
                         unknownScanTimer.reset();
                         lastNonUnknownSeen = BallColor.UNKNOWN;
 
-                        seqState = S.MOVE_TO_TARGET;
+                        seqState = SeqState.MOVE_TO_TARGET;
                         break;
                     }
 
@@ -497,7 +810,7 @@ public class TouchRev3 {
                             stateTimer.reset();
                             unknownScanTimer.reset();
                             lastNonUnknownSeen = BallColor.UNKNOWN;
-                            seqState = S.WAIT_VALIDATE;
+                            seqState = SeqState.WAIT_VALIDATE;
                         }
                         break;
                     }
@@ -506,7 +819,7 @@ public class TouchRev3 {
                         if (stateTimer.seconds() >= VALIDATE_DELAY_SEC) {
                             unknownScanTimer.reset();
                             lastNonUnknownSeen = BallColor.UNKNOWN;
-                            seqState = S.READ_VALIDATE;
+                            seqState = SeqState.READ_VALIDATE;
                         }
                         break;
                     }
@@ -524,7 +837,6 @@ public class TouchRev3 {
                         p.put("Seq/DoColorCheck", doColorCheck);
                         p.put("Seq/Hue", getHue(color4));
 
-                        // For first 2 shots: require a match (with UNKNOWN scan window)
                         if (doColorCheck) {
                             if (seen == BallColor.UNKNOWN) {
                                 if (unknownScanTimer.seconds() < UNKNOWN_SCAN_SEC) {
@@ -539,36 +851,25 @@ public class TouchRev3 {
                                 // mismatch -> advance to next unshot (+1 preference only)
                                 int nextIdx = nextUnshotIdxForwardOnly(targetIdx, shotMask);
                                 if (nextIdx == -1) {
-                                    // nowhere else to try -> just end (don’t “shoot empty” / don’t count)
+                                    // nowhere else -> go back intake and end (don’t count)
                                     setTargetInternal(POS_INTAKE);
                                     targetPos = POS_INTAKE;
                                     moveTimer.reset();
-                                    seqState = S.RETURN_INTAKE;
+                                    seqState = SeqState.RETURN_INTAKE;
                                     break;
                                 }
                                 targetIdx = nextIdx;
                                 targetPos = posFromIdx(targetIdx);
                                 setTargetInternal(targetPos);
                                 moveTimer.reset();
-                                seqState = S.MOVE_TO_TARGET;
+                                seqState = SeqState.MOVE_TO_TARGET;
                                 break;
                             }
-                        } else {
-                            // 3rd shot: no color check (as requested)
-                            // still prevent “UNKNOWN scan” delays
                         }
 
-                        // validated
+                        // validated (or 3rd shot no check)
                         stateTimer.reset();
-                        seqState = S.PRE_SHOT_REV_DELAY;
-                        break;
-                    }
-
-                    case PRE_SHOT_REV_DELAY: {
-                        if (stateTimer.seconds() >= PRE_SHOT_REV_DELAY_SEC) {
-                            stateTimer.reset();
-                            seqState = S.ARM_UP_STATE;
-                        }
+                        seqState = SeqState.ARM_UP_STATE;
                         break;
                     }
 
@@ -576,7 +877,7 @@ public class TouchRev3 {
                         arm.setPosition(ARM_UP);
                         if (stateTimer.seconds() >= ARM_UPDOWN_SEC) {
                             stateTimer.reset();
-                            seqState = S.ARM_DOWN_STATE;
+                            seqState = SeqState.ARM_DOWN_STATE;
                         }
                         break;
                     }
@@ -585,20 +886,20 @@ public class TouchRev3 {
                         arm.setPosition(ARM_DOWN);
                         if (stateTimer.seconds() >= ARM_UPDOWN_SEC) {
                             stateTimer.reset();
-                            seqState = S.POST_SHOT_SETTLE;
+                            seqState = SeqState.POST_SHOT_SETTLE;
                         }
                         break;
                     }
 
                     case POST_SHOT_SETTLE: {
                         if (stateTimer.seconds() >= BALL_SETTLE_SEC) {
-                            seqState = S.NEXT_SHOT;
+                            seqState = SeqState.NEXT_SHOT;
                         }
                         break;
                     }
 
                     case NEXT_SHOT: {
-                        // Count ONLY when we actually validated/reached shooting states
+                        // Count ONLY when we actually shot (reached this state)
                         shotMask[targetIdx] = true;
                         shotsDone++;
 
@@ -608,16 +909,14 @@ public class TouchRev3 {
                             setTargetInternal(POS_INTAKE);
                             targetPos = POS_INTAKE;
                             moveTimer.reset();
-                            seqState = S.RETURN_INTAKE;
+                            seqState = SeqState.RETURN_INTAKE;
                             break;
                         }
 
                         int nextIdx;
                         if (ONLY_VALIDATE_FIRST_TWO && shotsDone >= 2) {
-                            // last ball: go to remaining unshot
                             nextIdx = findOnlyRemainingUnshot(shotMask);
                         } else {
-                            // prefer backtrack 1 slot first
                             nextIdx = preferBacktrackOne(currentIdx, shotMask);
                         }
 
@@ -625,7 +924,7 @@ public class TouchRev3 {
                             setTargetInternal(POS_INTAKE);
                             targetPos = POS_INTAKE;
                             moveTimer.reset();
-                            seqState = S.RETURN_INTAKE;
+                            seqState = SeqState.RETURN_INTAKE;
                             break;
                         }
 
@@ -638,13 +937,13 @@ public class TouchRev3 {
                         unknownScanTimer.reset();
                         lastNonUnknownSeen = BallColor.UNKNOWN;
 
-                        seqState = S.MOVE_TO_TARGET;
+                        seqState = SeqState.MOVE_TO_TARGET;
                         break;
                     }
 
                     case RETURN_INTAKE: {
                         if (atTarget(POS_INTAKE) || moveTimer.seconds() >= MOVE_TIMEOUT_SEC) {
-                            seqState = S.DONE;
+                            seqState = SeqState.DONE;
                         }
                         break;
                     }
@@ -661,6 +960,71 @@ public class TouchRev3 {
             }
         };
     }
+
+    // =========================
+    // TOUCH ADVANCE (your stuff)
+    // =========================
+    private boolean touchAdvanceEnabled = true;
+    private boolean touchLockedOut = false;
+    private int touchBallCount = 3;               // (keeping your original even though it’s weird)
+    private boolean touchLastPressed = false;
+
+    public Action updateTouchAdvance() {
+        return new Action() {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+
+                if (sequenceRunning) {
+                    packet.put("Touch/BlockedBySeq", true);
+                    return true;
+                }
+
+                boolean pressed = touchSensor.isPressed();
+
+                if (touchAdvanceEnabled && !touchLockedOut) {
+                    if (pressed && !touchLastPressed) {
+
+                        if (touchBallCount < MAX_SLOTS) {
+                            touchBallCount++;
+
+                            targetPosition = clamp(touchBallCount * TICKS_PER_SLOT, 0, MAX_POSITION);
+
+                            if (touchBallCount >= MAX_SLOTS) {
+                                touchLockedOut = true;
+                            }
+                        } else {
+                            touchLockedOut = true;
+                        }
+                    }
+                }
+
+                touchLastPressed = pressed;
+
+                packet.put("Touch/Pressed", pressed);
+                packet.put("Touch/Enabled", touchAdvanceEnabled);
+                packet.put("Touch/Locked", touchLockedOut);
+                packet.put("Touch/Balls", touchBallCount);
+                packet.put("Rev/Target", targetPosition);
+                packet.put("Rev/Actual", revolver.getCurrentPosition());
+
+                return true;
+            }
+        };
+    }
+
+    public Action resetTouch() {
+        return packet -> {
+            touchBallCount = 0;
+            touchLockedOut = false;
+            touchLastPressed = false;
+            return false;
+        };
+    }
+
+    public Action disableTouchAdvance() { return p -> { touchAdvanceEnabled = false; return false; }; }
+    public Action enableTouchAdvance()  { return p -> { touchAdvanceEnabled = true;  return false; }; }
+    public int getTouchBallCount() { return touchBallCount; }
+    public boolean isTouchLockedOut() { return touchLockedOut; }
 
     // =========================
     // INTERNAL HELPERS (REV)
@@ -706,8 +1070,7 @@ public class TouchRev3 {
         return best;
     }
 
-    // Forward-only “search next” so it can’t jump 2 slots.
-    // Checks +1 then +2, but always chooses +1 if available.
+    // Forward-only “search next”: checks +1 then +2.
     private int nextUnshotIdxForwardOnly(int fromIdx, boolean[] shot) {
         int a = wrap3(fromIdx + 1);
         if (!shot[a]) return a;
@@ -718,7 +1081,7 @@ public class TouchRev3 {
         return -1;
     }
 
-    // Prefer backtrack 1 slot so you re-check the skipped one
+    // Prefer backtrack 1 slot first.
     private int preferBacktrackOne(int curIdx, boolean[] shot) {
         int back = wrap3(curIdx - 1);
         if (!shot[back]) return back;
@@ -739,7 +1102,7 @@ public class TouchRev3 {
     }
 
     private void resetSequenceState() {
-        seqState = S.INIT;
+        seqState = SeqState.INIT;
 
         shotsDone = 0;
         currentIdx = 0;
@@ -752,6 +1115,40 @@ public class TouchRev3 {
         moveTimer.reset();
         unknownScanTimer.reset();
         lastNonUnknownSeen = BallColor.UNKNOWN;
+    }
+
+    // =========================
+    // MEMORY HELPERS (NEW)
+    // =========================
+    private void clearMemoryScan() {
+        slotColorMem[0] = BallColor.UNKNOWN;
+        slotColorMem[1] = BallColor.UNKNOWN;
+        slotColorMem[2] = BallColor.UNKNOWN;
+        memValid = false;
+
+        memScanState = MemScanState.INIT;
+        memScanIdx = 0;
+        memLastNonUnknown = BallColor.UNKNOWN;
+    }
+
+    private void memTargetToIndex(int idx) {
+        idx = wrap3(idx);
+        memTargetIdx = idx;
+        memTargetPos = posFromIdx(idx);
+        setTargetInternal(memTargetPos);
+    }
+
+    private int chooseSlotForExpected(BallColor expected, boolean[] alreadyShot) {
+        // pick the first slot that matches expected and isn't shot
+        for (int i = 0; i < 3; i++) {
+            if (!alreadyShot[i] && slotColorMem[i] == expected) return i;
+        }
+        return -1;
+    }
+
+    private int firstUnshot(boolean[] alreadyShot) {
+        for (int i = 0; i < 3; i++) if (!alreadyShot[i]) return i;
+        return -1;
     }
 
     // =========================
@@ -783,139 +1180,16 @@ public class TouchRev3 {
     // =========================
     // INTERNAL HELPERS (TURRET)
     // =========================
-    private void runTurretLogic() {
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(orientation.getYaw());
-
-        LLResult llResult = limelight.getLatestResult();
-
-        if (llResult != null && llResult.isValid()) {
-            double tx = llResult.getTx();
-            double power = -calculateTurretPID(tx);
-
-            int pos = turretEncoderMotor.getCurrentPosition();
-            if (turretLimits) {
-                if (pos >= turretMaxEnc && power > 0) power = 0;
-                else if (pos <= turretMinEnc && power < 0) power = 0;
-            }
-
-            turretServo.setPower(power);
-        } else {
-            turretServo.setPower(0);
-        }
-    }
-
-    public Action updateTouchAdvance() {
-        return new Action() {
-            @Override
-            public boolean run(@NonNull TelemetryPacket packet) {
-
-                // Don't load while shooting sequence is running (optional but recommended)
-                if (sequenceRunning) {
-                    packet.put("Touch/BlockedBySeq", true);
-                    return true;
-                }
-
-                boolean pressed = touchSensor.isPressed();
-
-                if (touchAdvanceEnabled && !touchLockedOut || Distance.getDistance() <= 3 && !touchLockedOut) {
-                    // Rising edge only
-                    if (pressed && !touchLastPressed) {
-
-                        if (touchBallCount < MAX_SLOTS) {
-                            touchBallCount++;
-
-                            // advance by one slot
-                            targetPosition = clamp(touchBallCount * TICKS_PER_SLOT, 0, MAX_POSITION);
-
-                            // When we hit 3 balls, lock it out until reset
-                            if (touchBallCount >= MAX_SLOTS) {
-                                touchLockedOut = true;
-                            }
-                        } else {
-                            touchLockedOut = true;
-                        }
-                    }
-                }
-
-                touchLastPressed = pressed;
-
-                packet.put("Touch/Pressed", pressed);
-                packet.put("Touch/Enabled", touchAdvanceEnabled);
-                packet.put("Touch/Locked", touchLockedOut);
-                packet.put("Touch/Balls", touchBallCount);
-                packet.put("Rev/Target", targetPosition);
-                packet.put("Dist", Distance.getDistance());
-                packet.put("Rev/Actual", revolver.getCurrentPosition());
-
-                return true; // keep running forever
-            }
-        };
-    }
-
-    public Action resetTouch() {
-        return packet -> {
-            touchBallCount = 0;
-            touchLockedOut = false;
-            touchLastPressed = false;
-            return false;
-        };
-    }
-
-    // =========================
-// TURRET: TRACK (RUN FOREVER IN ParallelAction) - TeleOp-style
-// =========================
-    private boolean turretTrackingEnabled = true;
-
-    public Action turretTrack() {
-        return new Action() {
-            private boolean initialized = false;
-
-            @Override
-            public boolean run(@NonNull TelemetryPacket packet) {
-                if (!initialized) {
-                    turretPidTimer.reset();
-                    turretLastError = 0;
-                    initialized = true;
-                }
-
-                if (turretTrackingEnabled) {
-                    runTurretLogic(packet);
-                } else {
-                    turretServo.setPower(0);
-                }
-
-                packet.put("Turret/Enabled", turretTrackingEnabled);
-                packet.put("Turret/Enc", turretEncoderMotor.getCurrentPosition());
-                packet.put("Turret/Pwr", turretServo.getPower());
-                return true; // IMPORTANT: keep running forever
-            }
-        };
-    }
-
-    public Action enableTurretTrack() {
-        return p -> { turretTrackingEnabled = true; return false; };
-    }
-
-    public Action disableTurretTrack() {
-        return p -> { turretTrackingEnabled = false; turretServo.setPower(0); return false; };
-    }
-
     private void runTurretLogic(@NonNull TelemetryPacket packet) {
-        // Push robot yaw to Limelight (RADIANS like your scan method)
         YawPitchRollAngles ypr = imu.getRobotYawPitchRollAngles();
         limelight.updateRobotOrientation(ypr.getYaw(AngleUnit.RADIANS));
 
         LLResult llResult = limelight.getLatestResult();
 
-        // Only track when we truly have a valid result
         if (llResult != null && llResult.isValid()) {
             double tx = llResult.getTx();
-
-            // TeleOp-style PID: power is based on tx directly (no extra negative flip)
             double power = calculateTurretPID(tx);
 
-            // Safety limits using encoder motor position (like GoodTurret)
             int pos = turretEncoderMotor.getCurrentPosition();
             if (turretLimits) {
                 if (pos >= turretMaxEnc && power > 0) power = 0;
@@ -932,8 +1206,6 @@ public class TouchRev3 {
         }
     }
 
-    // TeleOp-style PD controller (matches your GoodTurret behavior)
-// NOTE: uses turretP, turretD, turretMaxPower, turretMinPower, turretTolerance
     private double calculateTurretPID(double error) {
         double dt = turretPidTimer.seconds();
         if (dt <= 0) dt = 0.02;
@@ -950,22 +1222,10 @@ public class TouchRev3 {
 
         double out = P + D;
 
-        // Minimum power clamp (stiction)
-        if (Math.abs(out) < turretMinPower) {
-            out = Math.signum(out) * turretMinPower;
-        }
-
-        // Max power clamp
+        if (Math.abs(out) < turretMinPower) out = Math.signum(out) * turretMinPower;
         if (out > turretMaxPower) out = turretMaxPower;
         if (out < -turretMaxPower) out = -turretMaxPower;
 
         return out;
     }
-
-
-    public Action disableTouchAdvance() { return p -> { touchAdvanceEnabled = false; return false; }; }
-    public Action enableTouchAdvance()  { return p -> { touchAdvanceEnabled = true;  return false; }; }
-    public int getTouchBallCount() { return touchBallCount; }
-    public boolean isTouchLockedOut() { return touchLockedOut; }
-
 }

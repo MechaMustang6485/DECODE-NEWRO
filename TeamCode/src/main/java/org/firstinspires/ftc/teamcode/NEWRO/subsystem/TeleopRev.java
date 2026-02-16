@@ -21,7 +21,6 @@ public class TeleopRev {
     public static int MAX_POSITION = 288;
     public static double MOTOR_POWER_LIMIT = 0.6;
 
-    private DcMotorEx Intake;
 
 
     private final DcMotorEx revolver;
@@ -42,7 +41,7 @@ public class TeleopRev {
         revolver.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
 
-        Intake = hardwareMap.get(DcMotorEx.class, "intake");
+
     }
 
     /**
@@ -71,9 +70,7 @@ public class TeleopRev {
 
         lastTouchState = isPressed;
     }
-    public void IntakePower(double power){
-        Intake.setPower(power);
-    }
+
 
     private void handleRevolverPID() {
 

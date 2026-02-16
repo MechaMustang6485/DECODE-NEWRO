@@ -8,6 +8,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -16,6 +17,7 @@ import java.util.List;
 public class Turret2 {
     private CRServo turretServo;
     private Limelight3A limelight;
+    private DcMotor Intake;
 
     public static int TARGET_ID = 24;
     public static double Lp = 0.02;
@@ -25,7 +27,10 @@ public class Turret2 {
     public static double Tolerance = 0.5;
     private double lastError = 0;
     private ElapsedTime pidTimer = new ElapsedTime();
-    private int lockedTargetID = -1;
+
+    public static boolean Limits = true;
+    public static int MinPo = -11000;
+    public static int Maxpo = 4800;
 
     public Turret2(HardwareMap hardwareMap) {
         turretServo = hardwareMap.get(CRServo.class, "Turret");
@@ -36,6 +41,12 @@ public class Turret2 {
         limelight.pipelineSwitch(8);
         limelight.start();
         pidTimer.reset();
+
+
+        Intake = hardwareMap.get(DcMotor.class, "intake");
+        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        Intake.setDirection(DcMotor.Direction.REVERSE);
     }
 
     public class trakingTurret implements Action {
@@ -50,7 +61,16 @@ public class Turret2 {
                 double TX = llResult.getTx();
                 double power = calculatePID(TX);
 
+                int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
+                if (Limits) {
+                    if (currentPos >= Maxpo && power > 0){
+                        power = 0;
+                    }
 
+                    else if (currentPos <= MinPo && power < 0){
+                        power = 0;
+                    };
+                }
 
 
                 turretServo.setPower(power);

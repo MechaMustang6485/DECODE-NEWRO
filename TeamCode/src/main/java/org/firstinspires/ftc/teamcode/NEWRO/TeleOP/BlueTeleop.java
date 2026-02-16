@@ -100,6 +100,9 @@ public class BlueTeleop extends OpMode {
         imu.initialize(new IMU.Parameters(orientation));
 
         Intake = hardwareMap.get(DcMotor.class, "intake");
+        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        Intake.setDirection(DcMotor.Direction.REVERSE);
 
 
         turretServo = hardwareMap.get(CRServo.class, "Turret");
@@ -117,8 +120,6 @@ public class BlueTeleop extends OpMode {
         rightBack = hardwareMap.get(DcMotor.class, "Br");
         leftBack = hardwareMap.get(DcMotor.class, "Bl");
 
-        //leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -188,7 +189,7 @@ public class BlueTeleop extends OpMode {
                 RevovlerMoving = false;
                 arm.setPosition(ARM_DOWN);
                 Revolver.goToSlot(0);
-             Revolver.IntakePower(1);
+                Intake.setPower(-1);
                 shooterT.setVelocity(900);
                 shooterB.setVelocity(900);
             }
@@ -233,11 +234,11 @@ public class BlueTeleop extends OpMode {
         }
 
 
-        if (gamepad2.dpadLeftWasPressed())    Intake.setPower(1);
+        if (gamepad2.dpadLeftWasPressed())  Intake.setPower(-1);
         if (gamepad2.dpadRightWasPressed()) Intake.setPower(0);
 
         if (gamepad2.right_trigger >= 1) {
-            Revolver.IntakePower(-1);
+        Intake.setPower(1);
         }
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
@@ -248,19 +249,19 @@ public class BlueTeleop extends OpMode {
         if (gamepad2.right_bumper) {
             shooterT.setVelocity(curTargetVelocity);
             shooterB.setVelocity(curTargetVelocity);
-            Revolver.IntakePower(0);
+            Intake.setPower(0);
         }
 
         if (gamepad2.left_bumper){
             shooterT.setVelocity(LowVelocityShot);
             shooterB.setVelocity(LowVelocityShot);
-            Revolver.IntakePower(0);
+            Intake.setPower(0);
         }
 
         if (gamepad2.b){
             shooterT.setVelocity(0);
             shooterB.setVelocity(0);
-            Revolver.IntakePower(1);
+            Intake.setPower(0);
         }
         updateTelemetry();
     }
@@ -284,7 +285,7 @@ public class BlueTeleop extends OpMode {
             double power = calculatePID(TX);
 
             // Safety Limits
-            int currentPos = leftFront.getCurrentPosition();//the encoder make thing more accuret
+            int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
             if (Limits) {
                 if (currentPos >= Maxpo && power > 0){
                     power = 0;

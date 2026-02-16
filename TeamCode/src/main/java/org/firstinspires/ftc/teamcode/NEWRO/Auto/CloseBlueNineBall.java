@@ -11,13 +11,11 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -25,15 +23,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter4;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev4;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret2;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret3;
 
 
 @Config
@@ -64,8 +56,10 @@ public final class CloseBlueNineBall extends LinearOpMode {
     }
 
     public void initTurret(){
-        CRServo turretServo = hardwareMap.get(CRServo.class, "Turret");
-        turretServo.setDirection(CRServo.Direction.REVERSE);
+       DcMotor intake = hardwareMap.get(DcMotor.class, "intake");
+        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setDirection(DcMotor.Direction.REVERSE);
     }
 
     public void shooter() {
@@ -98,7 +92,7 @@ public final class CloseBlueNineBall extends LinearOpMode {
                 // .waitSeconds(10)
                 .stopAndAdd(shooter.setVelo(HighVelocityShot))
                 .strafeToLinearHeading(new Vector2d(-60.46, 15.57), Math.toRadians(1.89), (pose2dDual, posePath, v) -> 82)
-                //.waitSeconds(0.3)
+                .waitSeconds(0.1)
                 .stopAndAdd(Revolver.setTarget(48))
                 .waitSeconds(0.3)
                 .stopAndAdd(new armAction(arm, 0.3))
@@ -112,35 +106,35 @@ public final class CloseBlueNineBall extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(0))
-                .stopAndAdd(new Intake(intake, 1))
+                .stopAndAdd(new Intake(intake, -1))
                 //spike line #1
                 .stopAndAdd(Revolver.resetTouch())
                 .strafeToLinearHeading(new Vector2d(-48.4, 29), Math.toRadians(40),(pose2dDual, posePath, v) -> 82)
-                .strafeToLinearHeading(new Vector2d(-20.13, 53.33), Math.toRadians(40.0), (pose2dDual, posePath, v) -> 10)
-                .strafeToLinearHeading(new Vector2d(-60.1, 15.41), Math.toRadians(7.58), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(-20.13, 53.33), Math.toRadians(40.0), (pose2dDual, posePath, v) -> 30)
+                .strafeToLinearHeading(new Vector2d(-59.1, 15.41), Math.toRadians(7.58), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.3)
                 //shooting #2
                 .stopAndAdd(Revolver.setTarget(240))
                 .waitSeconds(0.5)
-                .stopAndAdd(new Back6test.armAction(arm, 0.3))
-                .stopAndAdd(new Back6test.armAction(arm, 0))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(144))
                 .waitSeconds(0.7)
-                .stopAndAdd(new Back6test.armAction(arm, 0.3))
-                .stopAndAdd(new Back6test.armAction(arm, 0))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(48))
                 .waitSeconds(0.7)
-                .stopAndAdd(new Back6test.armAction(arm, 0.3))
-                .stopAndAdd(new Back6test.armAction(arm, 0))
+                .stopAndAdd(new armAction(arm, 0.3))
+                .stopAndAdd(new armAction(arm, 0))
                 .waitSeconds(0.3)
                 .stopAndAdd(Revolver.setTarget(0))
                 .stopAndAdd(Revolver.resetTouch())
-                .stopAndAdd(new Back6test.Intake(intake, 1))
+                .stopAndAdd(new Back6test.Intake(intake, -1))
                 .strafeToLinearHeading(new Vector2d(-64.59, 58.95), Math.toRadians(40), (pose2dDual, posePath, v) -> 80)
                 .strafeToLinearHeading(new Vector2d(-35.02, 85.57), Math.toRadians(40), (pose2dDual, posePath, v) -> 20)
                 .strafeToLinearHeading(new Vector2d(-49.7, 73.37), Math.toRadians(40), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.1)
-                .strafeToLinearHeading(new Vector2d(-61.55, 15.59), Math.toRadians(-0.032), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(-68.55, 15.59), Math.toRadians(-0.032), (pose2dDual, posePath, v) -> 80)
                 .stopAndAdd(Revolver.setTarget(240))
                 .waitSeconds(0.5)
                 .stopAndAdd(new armAction(arm, 0.3))
@@ -155,7 +149,7 @@ public final class CloseBlueNineBall extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0))
                 .waitSeconds(1)
                 .stopAndAdd(Revolver.setTarget(0))
-                .strafeToLinearHeading(new Vector2d(-42.36,57.25), Math.toRadians(40), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(-39.86,56.25), Math.toRadians(40), (pose2dDual, posePath, v) -> 80)
 
                 //spike line #2
                 /*

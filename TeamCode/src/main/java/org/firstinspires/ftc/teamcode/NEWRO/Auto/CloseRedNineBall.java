@@ -62,8 +62,10 @@ public final class CloseRedNineBall extends LinearOpMode {
     }
 
     public void initTurret(){
-        CRServo turretServo = hardwareMap.get(CRServo.class, "Turret");
-        turretServo.setDirection(CRServo.Direction.REVERSE);
+        DcMotor intake = hardwareMap.get(DcMotor.class, "intake");
+        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setDirection(DcMotor.Direction.REVERSE);
     }
 
     public void shooter() {
@@ -110,7 +112,7 @@ public final class CloseRedNineBall extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0.3))
                 .stopAndAdd(new armAction(arm, 0))
                 .stopAndAdd(Revolver.setTarget(0))
-                .stopAndAdd(new Intake(intake, 1))
+                .stopAndAdd(new Intake(intake, -1))
                 //spike line #1
                 .stopAndAdd(Revolver.resetTouch())
                 .strafeToLinearHeading(new Vector2d(-59.63, -28.21), Math.toRadians(-40.0), (pose2dDual, posePath, v) -> 80)
@@ -133,7 +135,7 @@ public final class CloseRedNineBall extends LinearOpMode {
                 .waitSeconds(0.3)
                 .stopAndAdd(Revolver.setTarget(0))
                 .stopAndAdd(Revolver.resetTouch())
-                .stopAndAdd(new Back6test.Intake(intake, 1))
+                .stopAndAdd(new Back6test.Intake(intake, -1))
                 .strafeToLinearHeading(new Vector2d(-87.86, -47.73), Math.toRadians(-40), (pose2dDual, posePath, v) -> 80)
                 .strafeToLinearHeading(new Vector2d(-54.52, -76.57), Math.toRadians(-40), (pose2dDual, posePath, v) -> 20)
                 .strafeToLinearHeading(new Vector2d(-70.65, -62.39), Math.toRadians(-40), (pose2dDual, posePath, v) -> 80)
@@ -265,6 +267,7 @@ public final class CloseRedNineBall extends LinearOpMode {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (!initialized) {
                 timer = new ElapsedTime();
+                intake.setDirection(DcMotor.Direction.REVERSE);
                 intake.setPower(power);
                 initialized = true;
             }

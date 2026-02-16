@@ -10,6 +10,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -30,6 +31,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TeleopRev;
 
 import java.util.List;
 
+
 @Config
 @TeleOp
 public class RedTeleop extends OpMode {
@@ -45,6 +47,8 @@ public class RedTeleop extends OpMode {
     public static double ARM_UP = 0.3, ARM_DOWN = 0.0;
     private ElapsedTime RevolverTimer = new ElapsedTime();
     private boolean RevovlerMoving = false;
+    private ElapsedTime armTimer = new ElapsedTime();
+    private boolean armMovingAuto = false;
 
 
     //parts of robot
@@ -70,7 +74,7 @@ public class RedTeleop extends OpMode {
     public static double MaxPower = 0.5;
     public static double MinPower = 0.05;
     public static double Tolerance = 0.5;
-    public static int LIMELIGHT_PIPELINE = 1;
+    public static int LIMELIGHT_PIPELINE = 8;
 
     // Safety Limits
     public static boolean Limits = true;
@@ -99,6 +103,9 @@ public class RedTeleop extends OpMode {
         imu.initialize(new IMU.Parameters(orientation));
 
         Intake = hardwareMap.get(DcMotor.class, "intake");
+        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        Intake.setDirection(DcMotor.Direction.REVERSE);
 
 
         turretServo = hardwareMap.get(CRServo.class, "Turret");
@@ -184,34 +191,24 @@ public class RedTeleop extends OpMode {
                 RevovlerMoving = false;
                 arm.setPosition(ARM_DOWN);
                 Revolver.goToSlot(0);
-                Revolver.IntakePower(1);
+                Intake.setPower(-1);
                 shooterT.setVelocity(900);
                 shooterB.setVelocity(900);
             }
         }
-/*
-        if (gamepad2.yWasPressed()) {//shoot position
-            if (target == 0|| target == 96 || target == 192 || target == 48) {
-                target = 144;
-            } else if (target == 144) {
-                target = 240;
 
-            }else {
-                target = shoot;
-            }
+        if (gamepad2.dpadUpWasPressed()) {
+            armMovingAuto = true;
+            armTimer.reset();
         }
 
-\
- */
-        if (gamepad2.aWasPressed()) {
-            if (Revolver.getTarget() == 0||Revolver.getTarget() == 96||Revolver.getTarget() == 192||Revolver.getTarget() == 288) {
-                Revolver.setTargetPosition(48);
-            } else if (Revolver.getTarget() == 48) {
-                Revolver.setTargetPosition(144);
-            } else if (Revolver.getTarget() == 144) {
-                Revolver.setTargetPosition(240);
+        if (armMovingAuto) {
+            if (armTimer.seconds() < 0.4) {
+                arm.setPosition(ARM_UP);
+            } else if (armTimer.seconds() < 0.8) {
+                arm.setPosition(ARM_DOWN);
             } else {
-                Revolver.goToSlot(0);
+                armMovingAuto = false;
             }
         }
 
@@ -223,23 +220,27 @@ public class RedTeleop extends OpMode {
             } else if (Revolver.getTarget() == 192) {
                 Revolver.setTargetPosition(288);
             } else {
-                Revolver.setTargetPosition(0);
+                Revolver.setTargetPosition(96);
+            }
+        }
+        if (gamepad2.aWasPressed()) {
+            if (Revolver.getTarget() == 0|| Revolver.getTarget() == 96||Revolver.getTarget() == 192||Revolver.getTarget() == 288) {
+                Revolver.setTargetPosition(48);
+            } else if (Revolver.getTarget() == 48) {
+                Revolver.setTargetPosition(144);
+            } else if (Revolver.getTarget() == 144) {
+                Revolver.setTargetPosition(240);
+            } else {
+                Revolver.goToSlot(0);
             }
         }
 
-        if (gamepad1.a) {
-            curTargetVelocity = 4000;
-        }
 
-        if (gamepad1.y) {
-            curTargetVelocity = 3500;
-        }
-
-        if (gamepad2.dpadLeftWasPressed())Intake.setPower(1);
+        if (gamepad2.dpadLeftWasPressed())  Intake.setPower(-1);
         if (gamepad2.dpadRightWasPressed()) Intake.setPower(0);
 
         if (gamepad2.right_trigger >= 1) {
-            Revolver.IntakePower(-1);
+            Intake.setPower(1);
         }
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
@@ -250,19 +251,19 @@ public class RedTeleop extends OpMode {
         if (gamepad2.right_bumper) {
             shooterT.setVelocity(curTargetVelocity);
             shooterB.setVelocity(curTargetVelocity);
-            Revolver.IntakePower(0);
+            Intake.setPower(0);
         }
 
         if (gamepad2.left_bumper){
             shooterT.setVelocity(LowVelocityShot);
             shooterB.setVelocity(LowVelocityShot);
-            Revolver.IntakePower(0);
+            Intake.setPower(0);
         }
 
         if (gamepad2.b){
             shooterT.setVelocity(0);
             shooterB.setVelocity(0);
-            Revolver.IntakePower(1);
+            Intake.setPower(0);
         }
         updateTelemetry();
     }
@@ -278,60 +279,32 @@ public class RedTeleop extends OpMode {
         limelight.updateRobotOrientation(orientation.getYaw());
         LLResult llResult = limelight.getLatestResult();
 
-        double power = 0;
-        boolean specificTargetVisible = false;
 
-        // Check if we see valid targets
-        if (llResult != null && llResult.isValid()) {
-            List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
+        if (llResult != null) {
 
 
-            if (lockedTargetID == -1) {
-                if (!fiducialResults.isEmpty()) {
+            double TX = llResult.getTx();
+            double power = calculatePID(TX);
 
-                    lockedTargetID = fiducialResults.get(0).getFiducialId();
-                    status = "LOCKED onto ID: " + lockedTargetID;
-                }
-            }
-
-
-            if (lockedTargetID != -1) {
-                for (LLResultTypes.FiducialResult fr : fiducialResults) {
-                    if (fr.getFiducialId() == lockedTargetID) {
-                        if (fr.getFiducialId() == 20 || fr.getFiducialId() == 24) {
-                            double TX = fr.getTargetXDegrees();
-                            power = calculatePID(TX);
-                            specificTargetVisible = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-
-        if (specificTargetVisible) {
-
+            // Safety Limits
+            int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
             if (Limits) {
-
-                int currentPos = leftFront.getCurrentPosition();
-                if (currentPos >= Maxpo && power > 0) {
-                    power = 0;
-                } else if (currentPos <= MinPo && power < 0) {
+                if (currentPos >= Maxpo && power > 0){
                     power = 0;
                 }
-            }
-            turretServo.setPower(power);
-            status = "Tracking ID " + lockedTargetID;
-        } else {
 
-            turretServo.setPower(0);
-            if (lockedTargetID != -1) {
-                status = "Searching for ID " + lockedTargetID + "...";
-            } else {
-                status = "Waiting for any target...";
+                else if (currentPos <= MinPo && power < 0){
+                    power = 0;
+                };
             }
+
+            turretServo.setPower(power);
+            status = "Sees" + TARGET_ID;
+        } else {
+            turretServo.setPower(0);
+            status = "Searching";
         }
+
     }
     public void DriveInit() {
 
