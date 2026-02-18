@@ -149,7 +149,7 @@ public final class CloseBlueNineBall extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0))
                 .waitSeconds(1)
                 .stopAndAdd(Revolver.setTarget(0))
-                .strafeToLinearHeading(new Vector2d(-39.86,56.25), Math.toRadians(40), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(-49.32,46.17), Math.toRadians(40), (pose2dDual, posePath, v) -> 80)
 
                 //spike line #2
                 /*
