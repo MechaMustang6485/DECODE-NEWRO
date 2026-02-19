@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.NewRo2.subsystem;
+package org.firstinspires.ftc.teamcode.NEWRO.subsystem;
 
 import android.graphics.Color;
 
@@ -30,7 +30,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.Processors.PIDClassForAuto;
 import java.util.List;
 
 @Config
-public class TouchRev3 {
+public class TouchRev19 {
 
     // =========================
     // REVOLVER CONFIG
@@ -207,7 +207,7 @@ public class TouchRev3 {
     // =========================
     // CONSTRUCTOR
     // =========================
-    public TouchRev3(HardwareMap hardwareMap) {
+    public TouchRev19(HardwareMap hardwareMap) {
         revolver = hardwareMap.get(DcMotorEx.class, "revolver");
         touchSensor = hardwareMap.get(TouchSensor.class, "touch");
         limelight = hardwareMap.get(Limelight3A.class, "limelight");

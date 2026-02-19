@@ -42,7 +42,7 @@ public final class backredNineBall extends LinearOpMode {
 
     public  double pshot = 7.3013, ishot = 0, dshot = 0;
     public static double fshot = 2.47;
-    public static double HighVelocityShot = 1500;//3120
+    public static double HighVelocityShot = 1505;//3120
     public double LowVelocityShot = 0;
     public double curTargetVelocity = HighVelocityShot;
 
@@ -141,7 +141,7 @@ public final class backredNineBall extends LinearOpMode {
                 .strafeToLinearHeading(new Vector2d(69.3, 1.8), Math.toRadians(-14.6), (pose2dDual, posePath, v) -> 80)
                 .strafeToLinearHeading(new Vector2d(64.6, 1.9), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.7)
-                .strafeToLinearHeading(new Vector2d(10.1, 0.89), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(8.1, 0.89), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .stopAndAdd(Revolver.setTarget(240))
                 .waitSeconds(0.5)
                 .stopAndAdd(new armAction(arm, 0.3))
@@ -156,7 +156,7 @@ public final class backredNineBall extends LinearOpMode {
                 .stopAndAdd(new armAction(arm, 0))
                 .waitSeconds(1)
                 .stopAndAdd(Revolver.setTarget(0))
-                .strafeToLinearHeading(new Vector2d(25.2,30.3), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(22.2,27.3), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
 
                 //spike line #2
                 /*

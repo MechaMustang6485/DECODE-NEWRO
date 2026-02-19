@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.List;
 
-public class Turret3 {
+public class Turret4 {
     private CRServo turretServo;
     private Limelight3A limelight;
     private DcMotor Intake;
@@ -32,18 +32,20 @@ public class Turret3 {
     public static int MinPo = -11000;
     public static int Maxpo = 4800;
 
-    public Turret3(HardwareMap hardwareMap) {
+    public Turret4(HardwareMap hardwareMap) {
         turretServo = hardwareMap.get(CRServo.class, "Turret");
         turretServo.setDirection(CRServo.Direction.REVERSE);
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);
-        limelight.pipelineSwitch(2);
+        limelight.pipelineSwitch(4);
         limelight.start();
         pidTimer.reset();
 
+
         Intake = hardwareMap.get(DcMotor.class, "intake");
-        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+       // Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Intake.setDirection(DcMotor.Direction.REVERSE);
     }
 
@@ -53,38 +55,44 @@ public class Turret3 {
             LLResult llResult = limelight.getLatestResult();
 
 
-
-
             if (llResult != null && llResult.isValid()) {
-                double TX = llResult.getTx();
-                double power = calculatePID(TX);
+                List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
+                for (LLResultTypes.FiducialResult fr : fiducialResults) {
+                    if (fr.getFiducialId() == 20) {
 
-                int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
-                if (Limits) {
-                    if (currentPos >= Maxpo && power > 0){
-                        power = 0;
+                        double TX = fr.getTargetXDegrees();
+                        double power = calculatePID(TX);
+
+                        int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
+                        if (Limits) {
+                            if (currentPos >= Maxpo && power > 0) {
+                                power = 0;
+                            } else if (currentPos <= MinPo && power < 0) {
+                                power = 0;
+                            }
+
+                        }
+
+
+                        turretServo.setPower(power);
+
+                    } else {
+                        turretServo.setPower(0);
+
+
                     }
-
-                    else if (currentPos <= MinPo && power < 0){
-                        power = 0;
-                    };
                 }
 
 
-                turretServo.setPower(power);
-
-            } else {
-                turretServo.setPower(0);
-
 
             }
-
-
-
             return true;
         }
+
     }
-    public Action track(){
+
+
+    public Action track() {
         return new trakingTurret();
     }
 
@@ -111,5 +119,3 @@ public class Turret3 {
         return Math.max(-MaxPower, Math.min(MaxPower, output));
     }
 }
-
-

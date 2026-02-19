@@ -34,7 +34,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
 
 @Config
 @Autonomous
-public final class HumanZoneFirstFairBlue extends LinearOpMode {
+public final class HumanZoneFirstFarBlue extends LinearOpMode {
 
     public static int first = 1;
     public static int second = 2;
