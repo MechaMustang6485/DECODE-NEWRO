@@ -965,6 +965,12 @@ public class TouchRev3 {
     // TOUCH ADVANCE (your stuff)
     // =========================
     private boolean touchAdvanceEnabled = true;
+    // Debounce: must be pressed this long to count as a real press
+    public static double TOUCH_DEBOUNCE_SEC = 0.30;
+    private final ElapsedTime touchDebounceTimer = new ElapsedTime();
+    private boolean touchDebounceArmed = false;   // we started timing a press
+    private boolean touchPressLatched = false;    // we already counted this press
+
     private boolean touchLockedOut = false;
     private int touchBallCount = 3;               // (keeping your original even though it’s weird)
     private boolean touchLastPressed = false;
@@ -976,19 +982,37 @@ public class TouchRev3 {
 
                 if (sequenceRunning) {
                     packet.put("Touch/BlockedBySeq", true);
+                    turretServo.setPower(turretServo.getPower()); // no-op, ignore if you want
                     return true;
                 }
 
                 boolean pressed = touchSensor.isPressed();
 
+            // If not pressed: reset debounce + allow next press
+                if (!pressed) {
+                    touchDebounceArmed = false;
+                    touchPressLatched = false;
+                    touchDebounceTimer.reset();
+                }
+
                 if (touchAdvanceEnabled && !touchLockedOut) {
-                    if (pressed && !touchLastPressed) {
+
+                // Start timing when we first see pressed
+                    if (pressed && !touchDebounceArmed && !touchPressLatched) {
+                        touchDebounceArmed = true;
+                        touchDebounceTimer.reset();
+                    }
+
+                // If it's been held long enough and we haven't counted it yet -> count it
+                    if (pressed && touchDebounceArmed && !touchPressLatched
+                            && touchDebounceTimer.seconds() >= TOUCH_DEBOUNCE_SEC) {
+
+                        touchPressLatched = true;  // one increment per physical press
 
                         if (touchBallCount < MAX_SLOTS) {
                             touchBallCount++;
-
                             targetPosition = clamp(touchBallCount * TICKS_PER_SLOT, 0, MAX_POSITION);
-
+    
                             if (touchBallCount >= MAX_SLOTS) {
                                 touchLockedOut = true;
                             }
@@ -998,12 +1022,14 @@ public class TouchRev3 {
                     }
                 }
 
-                touchLastPressed = pressed;
-
                 packet.put("Touch/Pressed", pressed);
                 packet.put("Touch/Enabled", touchAdvanceEnabled);
                 packet.put("Touch/Locked", touchLockedOut);
                 packet.put("Touch/Balls", touchBallCount);
+                packet.put("Touch/DebArmed", touchDebounceArmed);
+                packet.put("Touch/Latched", touchPressLatched);
+                packet.put("Touch/DebT", touchDebounceTimer.seconds());
+
                 packet.put("Rev/Target", targetPosition);
                 packet.put("Rev/Actual", revolver.getCurrentPosition());
 
@@ -1011,6 +1037,7 @@ public class TouchRev3 {
             }
         };
     }
+
 
     public Action resetTouch() {
         return packet -> {
