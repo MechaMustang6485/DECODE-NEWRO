@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.List;
 
-public class Turret3 {
+public class Turret4 {
     private CRServo turretServo;
     private Limelight3A limelight;
     private DcMotor Intake;
@@ -32,18 +32,20 @@ public class Turret3 {
     public static int MinPo = -11000;
     public static int Maxpo = 4800;
 
-    public Turret3(HardwareMap hardwareMap) {
+    public Turret4(HardwareMap hardwareMap) {
         turretServo = hardwareMap.get(CRServo.class, "Turret");
         turretServo.setDirection(CRServo.Direction.REVERSE);
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);
-        limelight.pipelineSwitch(2);
+        limelight.pipelineSwitch(4);
         limelight.start();
         pidTimer.reset();
 
+
         Intake = hardwareMap.get(DcMotor.class, "intake");
-        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+       // Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Intake.setDirection(DcMotor.Direction.REVERSE);
     }
 
@@ -51,8 +53,6 @@ public class Turret3 {
         @Override
         public boolean run(@NonNull TelemetryPacket packet) {
             LLResult llResult = limelight.getLatestResult();
-
-
 
 
             if (llResult != null && llResult.isValid()) {
@@ -90,7 +90,9 @@ public class Turret3 {
         }
 
     }
-    public Action track(){
+
+
+    public Action track() {
         return new trakingTurret();
     }
 
@@ -117,5 +119,3 @@ public class Turret3 {
         return Math.max(-MaxPower, Math.min(MaxPower, output));
     }
 }
-
-

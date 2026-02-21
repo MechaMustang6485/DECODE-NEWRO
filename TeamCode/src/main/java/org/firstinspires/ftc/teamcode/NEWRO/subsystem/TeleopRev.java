@@ -77,7 +77,7 @@ public class TeleopRev {
         double power = PIDClassForTele.returnRevPID(targetPosition, revolver.getCurrentPosition());
 
 
-        power = Range.clip(power, -MOTOR_POWER_LIMIT, MOTOR_POWER_LIMIT);
+        //power = Range.clip(power, -MOTOR_POWER_LIMIT, MOTOR_POWER_LIMIT);
 
       revolver.setPower(power);
     }

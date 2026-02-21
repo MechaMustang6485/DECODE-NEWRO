@@ -2,19 +2,15 @@ package org.firstinspires.ftc.teamcode.NEWRO.TeleOP;
 
 
 
-
-
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.roadrunner.Action;
-import com.arcrobotics.ftclib.controller.PIDController;
-import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -24,86 +20,68 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TeleopRev;
 
 
 import java.util.List;
 
+
 @Config
 @TeleOp
 public class TeleopTester extends OpMode {
-    private PIDFController controller;//important
 
-    public static double p = 0.1, i = 0, d= 0.0002;
-    public static double f = 0.0001 ;
-
-    private static final int home = 0;
-
-    public static int target = home;
-
-    public static int intake = 96;
-
-    public static int shoot = 48;
-
-    public static double ARM_UP = 0.3, ARM_DOWN = 0.0;
-    private ElapsedTime armTimer = new ElapsedTime();
-    private ElapsedTime RevolverTimer = new ElapsedTime();
-    private boolean armMovingAuto = false;
-    private boolean RevovlerMoving = false;
-    boolean DoubleCheck = false;
-    private boolean isSensorEnabled = false;
-
+    //shooter tuning
     public static double HighVelocityShot = 1500;
-    public static double LowVelocityShot = 1225;
+    public static double LowVelocityShot = 1275;
     public double curTargetVelocity = HighVelocityShot;
-    public static double F = 17.5;
-    public static double P = 13;
+    public static double F = 15;
+    public static double P = 200;
 
-    private final double ticks_in_degree = 700/ 180.0;//changes depending on the motor
+    //Rapid shooting
+    public static double ARM_UP = 0.3, ARM_DOWN = 0.0;
+    private ElapsedTime RevolverTimer = new ElapsedTime();
+    private boolean RevovlerMoving = false;
+    private ElapsedTime armTimer = new ElapsedTime();
+    private boolean armMovingAuto = false;
 
-    private DcMotorEx Revolver;
+    public static double first = 0.8;
+    public static double second = 1.8;
+    public static double third = 2.8;
+
+    public static double first1 = 1.7;
+    public static double second1 = 2.2;
+    public static double third1 = 2.8;
+
+    //parts of robot
     private CRServo turretServo;
     private Servo arm;
     private DcMotorEx shooterT;
     private DcMotorEx shooterB;
     private Limelight3A limelight;
     private IMU imu;
-    private DcMotorEx Intake;
     private GoBildaPinpointDriver pinpoint;
-    private  TouchSensor touchSensor;
-
+    TeleopRev Revolver;
     private DcMotor leftFront;
     private DcMotor rightFront;
     private DcMotor rightBack;
     private DcMotor leftBack;
+    private DcMotor Intake;
 
+    //turret
     private int lockedTargetID = -1;
-
-    private boolean touchAdvanceEnabled = true;   // can be toggled
-    private boolean touchLockedOut = false;       // true after 3 balls
-    private int touchBallCount = 3;               // 0..3
-    private boolean touchLastPressed = false;     // edge detect
-    public static int TICKS_PER_SLOT = 96;
-    public static int MAX_SLOTS = 3;
-    public static int MAX_POSITION = MAX_SLOTS * TICKS_PER_SLOT; // 288
-
-    private int targetPosition = 0;
-
-    public static int Pollher = 100;
-
-
     public static int TARGET_ID = 24;
     public static double Lp = 0.02;
     public static double Ld = 0.002;
     public static double MaxPower = 0.5;
     public static double MinPower = 0.05;
     public static double Tolerance = 0.5;
+    public static int LIMELIGHT_PIPELINE = 8;
 
     // Safety Limits
     public static boolean Limits = true;
@@ -111,43 +89,45 @@ public class TeleopTester extends OpMode {
     public static int Maxpo = 4800;
 
 
+    //do not touch, for turret
     private double lastError = 0;
     private ElapsedTime pidTimer = new ElapsedTime();
     private String status = "Initializing";
 
 
+
     @Override
     public void init(){
-        controller = new PIDController(p, i, d);
+
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());//allow to do stuff in dash board
-        Revolver = hardwareMap.get(DcMotorEx.class,"revolver");
-        Revolver.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);//better stopping
-        Revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        Revolver.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);//it better to run without encoders because it is faster
-        final int home = 0;
 
-
+        Revolver = new TeleopRev(hardwareMap);
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot orientation = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.DOWN,
                 RevHubOrientationOnRobot.UsbFacingDirection.RIGHT);
         imu.initialize(new IMU.Parameters(orientation));
 
+        Intake = hardwareMap.get(DcMotor.class, "intake");
+        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        Intake.setDirection(DcMotor.Direction.REVERSE);
+
 
         turretServo = hardwareMap.get(CRServo.class, "Turret");
         turretServo.setDirection(CRServo.Direction.REVERSE);
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.setPollRateHz(Pollher);
-        limelight.pipelineSwitch(0);
+        limelight.setPollRateHz(100);
+        limelight.pipelineSwitch(LIMELIGHT_PIPELINE);
 
         leftFront = hardwareMap.get(DcMotor.class, "Fl");
         rightFront = hardwareMap.get(DcMotor.class, "Fr");
         rightBack = hardwareMap.get(DcMotor.class, "Br");
         leftBack = hardwareMap.get(DcMotor.class, "Bl");
 
-        //leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -170,12 +150,9 @@ public class TeleopTester extends OpMode {
         shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
         telemetry.addLine("init complete");
 
-        Intake = hardwareMap.get(DcMotorEx.class, "intake");
-
         arm = hardwareMap.get(Servo.class, "arm");
         arm.setPosition(0);
 
-        touchSensor = hardwareMap.get(TouchSensor.class, "touch");
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
@@ -193,111 +170,43 @@ public class TeleopTester extends OpMode {
     public void loop(){
         runTurretLogic();
         DriveInit();
+        Revolver.update();
 
-
-        controller.setPIDF(p, i, d, f);
-        int revpose = Revolver.getCurrentPosition();
-        double pid = controller.calculate(revpose, target);//math
-        double ff = Math.cos(Math.toRadians(target / ticks_in_degree)) * f;//math
-
-        controller.setTolerance(0.5);//makes more accurete
-        controller.atSetPoint();//this always paired with setTolerance
-        double power = pid + ff;//math that sets the power
-        Revolver.setPower(power);
-        telemetry.addData("pose1",revpose);
-
-        boolean pressed = touchSensor.isPressed();
-
-        if (touchAdvanceEnabled && !touchLockedOut) {
-            // Rising edge only
-            if (pressed && !touchLastPressed) {
-
-                if (touchBallCount < MAX_SLOTS) {
-                    touchBallCount++;
-
-                    // advance by one slot
-                    targetPosition = clamp(touchBallCount * TICKS_PER_SLOT, 0, MAX_POSITION);
-
-                    // When we hit 3 balls, lock it out until reset
-                    if (touchBallCount >= MAX_SLOTS) {
-                        touchLockedOut = true;
-                    }
-                } else {
-                    touchLockedOut = true;
-                }
-            }
-        }
-
-        touchLastPressed = pressed;
-        /*
-        if (gamepad1.dpad_left) {
-            Revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        }
-
-        if (gamepad1.dpad_right) {
-            Revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        }
-
-
-         */
-
-
-
-
-        if (gamepad2.yWasPressed()) {//shoot position
-            if (target == 0|| target == 96 || target == 192 || target == 48) {
-                target = 144;
-            } else if (target == 144) {
-                target = 240;
-
-            }else {
-                target = shoot;
-            }
-        }
-        if (gamepad1.a) {
-            curTargetVelocity = 4000;
-        }
-
-        if (gamepad1.y) {
-            curTargetVelocity = 3500;
-        }
-
-        if (gamepad2.dpadLeftWasPressed()) Intake.setPower(1);
-        if (gamepad2.dpadRightWasPressed())Intake.setPower(0);
-
-        if (gamepad2.right_trigger >= 1) {
-            Intake.setPower(-1);
-        }
-        if (gamepad2.dpadUpWasPressed()) {
-            //  armMovingAuto = true;
+        if (gamepad2.yWasPressed()) {
             RevovlerMoving = true;
             RevolverTimer.reset();
-            // armTimer.reset();
         }
 
         if (RevovlerMoving) {//this works
             double elapsed = RevolverTimer.seconds();
-            if (elapsed < 1.2) {
-                target = 48;
-                if (elapsed > 0.4 && elapsed < 0.8) arm.setPosition(ARM_UP);
+            if (elapsed < first) {
+                Revolver.setTargetPosition(240);
+                if (elapsed > 0.6 && elapsed < 1) arm.setPosition(ARM_UP);
                 else arm.setPosition(ARM_DOWN);
             }
-            else if (elapsed < 2.4) {
-                target = 144;
-                if (elapsed > 1.6 && elapsed < 2.0) arm.setPosition(ARM_UP);
+            else if (elapsed < second) {
+                Revolver.setTargetPosition(144);
+                if (elapsed > first1 && elapsed < second1) arm.setPosition(ARM_UP);
                 else arm.setPosition(ARM_DOWN);
             }
-            else if (elapsed < 3.6) {
-                target = 240;
-                if (elapsed > 2.8 && elapsed < 3.2) arm.setPosition(ARM_UP);
+            else if (elapsed < third) {
+                Revolver.setTargetPosition(48);
+                if (elapsed > 2.7 && elapsed < 3.3) arm.setPosition(ARM_UP);
                 else arm.setPosition(ARM_DOWN);
             }
             else {
                 RevovlerMoving = false;
                 arm.setPosition(ARM_DOWN);
-                target = 0;
-
+                Revolver.goToSlot(0);
+                Intake.setPower(-1);
+                shooterT.setVelocity(900);
+                shooterB.setVelocity(900);
             }
+        }
+
+        if (gamepad2.dpadUpWasPressed()) {
+            armMovingAuto = true;
+            armTimer.reset();
         }
 
         if (armMovingAuto) {
@@ -310,36 +219,60 @@ public class TeleopTester extends OpMode {
             }
         }
 
+        if (gamepad2.xWasPressed()) {
+            if (Revolver.getTarget() == 0) {
+                Revolver.setTargetPosition(96);
+            } else if (Revolver.getTarget() == 96) {
+                Revolver.setTargetPosition(192);
+            } else if (Revolver.getTarget() == 192) {
+                Revolver.setTargetPosition(288);
+            } else {
+                Revolver.setTargetPosition(96);
+            }
+        }
+        if (gamepad2.aWasPressed()) {
+            if (Revolver.getTarget() == 0|| Revolver.getTarget() == 96||Revolver.getTarget() == 192||Revolver.getTarget() == 288) {
+                Revolver.setTargetPosition(48);
+            } else if (Revolver.getTarget() == 48) {
+                Revolver.setTargetPosition(144);
+            } else if (Revolver.getTarget() == 144) {
+                Revolver.setTargetPosition(240);
+            } else {
+                Revolver.goToSlot(0);
+            }
+        }
+
+
+        if (gamepad2.dpadLeftWasPressed())  Intake.setPower(-1);
+        if (gamepad2.dpadRightWasPressed()) Intake.setPower(0);
+
+        if (gamepad2.right_trigger >= 1) {
+            Intake.setPower(1);
+        }
+
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
         PIDFCoefficients pidfCoefficients1 = new PIDFCoefficients(P,0, 0, F);
         shooterT.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
         shooterB.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
 
-
         if (gamepad2.right_bumper) {
-
             shooterT.setVelocity(curTargetVelocity);
             shooterB.setVelocity(curTargetVelocity);
+            Intake.setPower(0);
         }
 
         if (gamepad2.left_bumper){
             shooterT.setVelocity(LowVelocityShot);
             shooterB.setVelocity(LowVelocityShot);
+            Intake.setPower(0);
         }
 
         if (gamepad2.b){
             shooterT.setVelocity(0);
             shooterB.setVelocity(0);
+            Intake.setPower(0);
         }
-
-
-
         updateTelemetry();
-
-
-    }
-    private int clamp(int v, int lo, int hi) {
-        return Math.max(lo, Math.min(hi, v));
     }
 
     @Override
@@ -353,60 +286,32 @@ public class TeleopTester extends OpMode {
         limelight.updateRobotOrientation(orientation.getYaw());
         LLResult llResult = limelight.getLatestResult();
 
-        double power = 0;
-        boolean specificTargetVisible = false;
 
-        // Check if we see valid targets
-        if (llResult != null && llResult.isValid()) {
-            List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
+        if (llResult != null) {
 
 
-            if (lockedTargetID == -1) {
-                if (!fiducialResults.isEmpty()) {
+            double TX = llResult.getTx();
+            double power = calculatePID(TX);
 
-                    lockedTargetID = fiducialResults.get(0).getFiducialId();
-                    status = "LOCKED onto ID: " + lockedTargetID;
-                }
-            }
-
-
-            if (lockedTargetID != -1) {
-                for (LLResultTypes.FiducialResult fr : fiducialResults) {
-                    if (fr.getFiducialId() == lockedTargetID) {
-                        if (fr.getFiducialId() == 20 || fr.getFiducialId() == 24) {
-                            double TX = fr.getTargetXDegrees();
-                            power = calculatePID(TX);
-                            specificTargetVisible = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-
-        if (specificTargetVisible) {
-
+            // Safety Limits
+            int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
             if (Limits) {
-
-                int currentPos = leftFront.getCurrentPosition();
-                if (currentPos >= Maxpo && power > 0) {
-                    power = 0;
-                } else if (currentPos <= MinPo && power < 0) {
+                if (currentPos >= Maxpo && power > 0){
                     power = 0;
                 }
-            }
-            turretServo.setPower(power);
-            status = "Tracking ID " + lockedTargetID;
-        } else {
 
-            turretServo.setPower(0);
-            if (lockedTargetID != -1) {
-                status = "Searching for ID " + lockedTargetID + "...";
-            } else {
-                status = "Waiting for any target...";
+                else if (currentPos <= MinPo && power < 0){
+                    power = 0;
+                };
             }
+
+            turretServo.setPower(power);
+            status = "Sees" + TARGET_ID;
+        } else {
+            turretServo.setPower(0);
+            status = "Searching";
         }
+
     }
     public void DriveInit() {
 
@@ -485,7 +390,10 @@ public class TeleopTester extends OpMode {
         telemetry.addData("Status", status);
         telemetry.addData("Turret Pos", leftFront.getCurrentPosition());
         telemetry.addData("Turret Power", turretServo.getPower());
-        telemetry.addData("Target",target);
+        telemetry.addData("Encoder", Revolver.getEncoder());
+        telemetry.addData("target", Revolver.getTarget());
+        telemetry.addData("velocity1", shooterT.getVelocity());
+        telemetry.addData("velocity2", shooterB.getVelocity());
         telemetry.update();
     }
 }
