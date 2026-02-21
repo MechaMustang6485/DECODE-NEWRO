@@ -51,7 +51,7 @@ public class RedTeleop extends OpMode {
     private ElapsedTime armTimer = new ElapsedTime();
     private boolean armMovingAuto = false;
 
-    private boolean o = false;
+
 
     public static int target = 1;
 
@@ -82,8 +82,8 @@ public class RedTeleop extends OpMode {
 
     // Safety Limits
     public static boolean Limits = true;
-    public static int MinPo = -11000;
-    public static int Maxpo = 4800;
+    public static int MinPo = -7300;
+    public static int Maxpo = 6300;
 
 
     //do not touch, for turret

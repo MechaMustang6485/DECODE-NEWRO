@@ -23,16 +23,14 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter4;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter5;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev32;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev4;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
 
 
 @Config
 @Autonomous
-public final class CloseBlueSeqTest extends LinearOpMode {
+public final class CloseBlueSeq extends LinearOpMode {
 
     public static int first = 1;
     public static int second = 2;

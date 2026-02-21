@@ -29,8 +29,8 @@ public class TurretRedSeq {
     private ElapsedTime pidTimer = new ElapsedTime();
 
     public static boolean Limits = true;
-    public static int MinPo = -11000;
-    public static int Maxpo = 4800;
+    public static int MinPo = -7300;
+    public static int Maxpo = 6300;
 
     public TurretRedSeq(HardwareMap hardwareMap) {
         turretServo = hardwareMap.get(CRServo.class, "Turret");

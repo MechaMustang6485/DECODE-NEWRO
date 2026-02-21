@@ -79,8 +79,8 @@ public class BlueTeleop extends OpMode {
 
     // Safety Limits
     public static boolean Limits = true;
-    public static int MinPo = -11000;
-    public static int Maxpo = 4800;
+    public static int MinPo = -7300;
+    public static int Maxpo = 6300;
 
 
     //do not touch, for turret
@@ -101,7 +101,7 @@ public class BlueTeleop extends OpMode {
         imu.initialize(new IMU.Parameters(orientation));
 
         Intake = hardwareMap.get(DcMotor.class, "intake");
-        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+       // Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Intake.setDirection(DcMotor.Direction.REVERSE);
 

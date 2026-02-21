@@ -31,6 +31,8 @@ import java.util.List;
 @Config
 public class TouchRev3 {
 
+    public static boolean touchLockedOut = false;
+
     // =========================
     // REVOLVER CONFIG
     // =========================
@@ -43,7 +45,7 @@ public class TouchRev3 {
     public static int POS_SHOOT1 = 144;
     public static int POS_SHOOT2 = 240;
 
-    public static double MOTOR_POWER_LIMIT = 0.6;
+    public static double MOTOR_POWER_LIMIT = 1.0;
     public static int AT_TARGET_TOL = 8;
 
     // How long we wait to arrive (if not at target yet)
@@ -966,13 +968,12 @@ public class TouchRev3 {
     // =========================
     private boolean touchAdvanceEnabled = true;
     // Debounce: must be pressed this long to count as a real press
-    public static double TOUCH_DEBOUNCE_SEC = 0.10;
+    public static double TOUCH_DEBOUNCE_SEC = 0.15;
     private final ElapsedTime touchDebounceTimer = new ElapsedTime();
     private boolean touchDebounceArmed = false;   // we started timing a press
     private boolean touchPressLatched = false;    // we already counted this press
 
-    private boolean touchLockedOut = false;
-    private int touchBallCount = 3;               // (keeping your original even though it’s weird)
+    public int touchBallCount = 3;               // (keeping your original even though it’s weird)
     private boolean touchLastPressed = false;
 
     public Action updateTouchAdvance() {

@@ -15,6 +15,7 @@ import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -29,16 +30,14 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter3;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Shooter4;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev33;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev32;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev34;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret2;
-import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TurretRedSeq;
 
 
 @Config
 @Autonomous
-public final class BackRedSeqTest extends LinearOpMode {
+public final class backBlueSeq extends LinearOpMode {
 
     public static int first = 1;
     public static int second = 2;
@@ -86,7 +85,7 @@ public final class BackRedSeqTest extends LinearOpMode {
         Servo arm = hardwareMap.get(Servo.class, "arm");
         DcMotor intake = hardwareMap.get(DcMotorEx.class, "intake");
         Shooter4 shooter = new Shooter4(hardwareMap);
-        TurretRedSeq turret = new TurretRedSeq(hardwareMap);
+        Turret turret = new Turret(hardwareMap);
 
 
 
@@ -99,29 +98,34 @@ public final class BackRedSeqTest extends LinearOpMode {
                 .stopAndAdd(Revolver.scanLimelightPattern())
                 .stopAndAdd(shooter.setVelo(HighVelocityShot))
                 .waitSeconds(2)
-                .stopAndAdd(Revolver.runSequence3ShotsNoShooter())
-                .stopAndAdd(new Intake(intake, -1))
                 //spike line #1
-                .stopAndAdd(Revolver.resetTouch())
-                .strafeToLinearHeading(new Vector2d(67.6, 5.2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .waitSeconds(0.3)
-                .strafeToLinearHeading(new Vector2d(63.0, 2.1), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                //.strafeToLinearHeading(new Vector2d(57.2, -2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(69.3, 1.8), Math.toRadians(-14.6), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(64.6, 1.9), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .waitSeconds(0.5)
-                .strafeToLinearHeading(new Vector2d(10.1, 0.89), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                //shooting #2
                 .stopAndAdd(Revolver.runSequence3ShotsNoShooter())
+                .waitSeconds(0.2)
                 .stopAndAdd(Revolver.resetTouch())
                 .stopAndAdd(new Intake(intake, -1))
-                .strafeToLinearHeading(new Vector2d(65.2, 7.42), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(46.23, 7.49), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(65.2, 7.42), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(46.23, 7.49), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(13.1, 0.89), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(58.2, -11.6), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .waitSeconds(0.4)
+                .strafeToLinearHeading(new Vector2d(54.2, -2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                //.strafeToLinearHeading(new Vector2d(57.2, -2), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(64, -2), Math.toRadians(8), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(59.8, -1.97), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .waitSeconds(0.8)
+                .strafeToLinearHeading(new Vector2d(13.32, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                //shooting #2
+                .stopAndAdd(new Intake(intake, 0))
                 .stopAndAdd(Revolver.runSequence3ShotsNoShooter())
-                .strafeToLinearHeading(new Vector2d(13.28,12.47), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .waitSeconds(0.2)
+                .stopAndAdd(Revolver.resetTouch())
+                .stopAndAdd(new Intake(intake, -1))
+                .strafeToLinearHeading(new Vector2d(65.2, -7.42), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                /*
+                .strafeToLinearHeading(new Vector2d(46.23, -7.49), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(65.2, -7.42), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(46.23, -7.49), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+
+               .strafeToLinearHeading(new Vector2d(30, 0.89), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                 */
+
 
                 //spike line #2
                 /*
@@ -233,8 +237,9 @@ public final class BackRedSeqTest extends LinearOpMode {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (!initialized) {
                 timer = new ElapsedTime();
-                intake.setPower(power);
-                initialized = true;
+                    intake.setPower(power);
+                    initialized = true;
+
             }
             return timer.seconds() < 0.1;//don't touch
         }
