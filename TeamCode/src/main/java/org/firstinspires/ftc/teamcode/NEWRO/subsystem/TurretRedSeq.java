@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.List;
 
-public class Turret3 {
+public class TurretRedSeq {
     private CRServo turretServo;
     private Limelight3A limelight;
     private DcMotor Intake;
@@ -32,18 +32,20 @@ public class Turret3 {
     public static int MinPo = -11000;
     public static int Maxpo = 4800;
 
-    public Turret3(HardwareMap hardwareMap) {
+    public TurretRedSeq(HardwareMap hardwareMap) {
         turretServo = hardwareMap.get(CRServo.class, "Turret");
         turretServo.setDirection(CRServo.Direction.REVERSE);
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);
-        limelight.pipelineSwitch(9);
+        limelight.pipelineSwitch(8);
         limelight.start();
         pidTimer.reset();
 
+
         Intake = hardwareMap.get(DcMotor.class, "intake");
         Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Intake.setDirection(DcMotor.Direction.REVERSE);
     }
 
@@ -53,12 +55,10 @@ public class Turret3 {
             LLResult llResult = limelight.getLatestResult();
 
 
-
-
             if (llResult != null && llResult.isValid()) {
                 List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
                 for (LLResultTypes.FiducialResult fr : fiducialResults) {
-                    if (fr.getFiducialId() == 20) {
+                    if (fr.getFiducialId() == 24) {
 
                         double TX = fr.getTargetXDegrees();
                         double power = calculatePID(TX);
@@ -90,6 +90,7 @@ public class Turret3 {
         }
 
     }
+
     public Action track(){
         return new trakingTurret();
     }

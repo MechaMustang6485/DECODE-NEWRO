@@ -15,6 +15,7 @@ import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -113,7 +114,7 @@ public final class backblueNineBall extends LinearOpMode {
                 .stopAndAdd(Revolver.resetTouch())
                 .strafeToLinearHeading(new Vector2d(59, -34.8), Math.toRadians(0), (pose2dDual, posePath, v) -> 20)
 //                .strafeToLinearHeading(new Vector2d(0.3637, 0.728), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
-                .strafeToLinearHeading(new Vector2d(13.32, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
+                .strafeToLinearHeading(new Vector2d(0.6032, 0.0049), Math.toRadians(0), (pose2dDual, posePath, v) -> 80)
                 .waitSeconds(0.3)
                 .stopAndAdd(new Intake(intake, 0))
                 //shooting #2

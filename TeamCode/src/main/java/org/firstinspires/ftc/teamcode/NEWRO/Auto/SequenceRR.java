@@ -10,6 +10,7 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
@@ -25,6 +26,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TouchRev3;
  * - Just press START. It will scan, then shoot.
  * - You can set RUN_TIMES > 1 to run sequence multiple times (debug).
  */
+@Disabled
 @Config
 @Autonomous(name = "SequenceRR", group = "NEWRO")
 public class SequenceRR extends LinearOpMode {

@@ -15,6 +15,7 @@ import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -33,7 +34,7 @@ import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret2;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.Turret3;
 
-
+@Disabled
 @Config
 @Autonomous
 public final class RRCodetest extends LinearOpMode {

@@ -58,33 +58,39 @@ public class Turret2 {
 
 
             if (llResult != null && llResult.isValid()) {
-                double TX = llResult.getTx();
-                double power = calculatePID(TX);
+                List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
+                for (LLResultTypes.FiducialResult fr : fiducialResults) {
+                    if (fr.getFiducialId() == 24) {
 
-                int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
-                if (Limits) {
-                    if (currentPos >= Maxpo && power > 0){
-                        power = 0;
+                        double TX = fr.getTargetXDegrees();
+                        double power = calculatePID(TX);
+
+                        int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
+                        if (Limits) {
+                            if (currentPos >= Maxpo && power > 0) {
+                                power = 0;
+                            } else if (currentPos <= MinPo && power < 0) {
+                                power = 0;
+                            }
+
+                        }
+
+
+                        turretServo.setPower(power);
+
+                    } else {
+                        turretServo.setPower(0);
+
+
                     }
-
-                    else if (currentPos <= MinPo && power < 0){
-                        power = 0;
-                    };
                 }
 
 
-                turretServo.setPower(power);
-
-            } else {
-                turretServo.setPower(0);
-
 
             }
-
-
-
             return true;
         }
+
     }
     public Action track(){
         return new trakingTurret();

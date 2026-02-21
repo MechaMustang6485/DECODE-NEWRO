@@ -29,6 +29,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TeleopRev;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TeleopRev1;
 
 
 import java.util.List;
@@ -60,7 +61,7 @@ public class BlueTeleop extends OpMode {
     private Limelight3A limelight;
     private IMU imu;
     private GoBildaPinpointDriver pinpoint;
-    TeleopRev Revolver;
+    TeleopRev1 Revolver;
     private DcMotor leftFront;
     private DcMotor rightFront;
     private DcMotor rightBack;
@@ -92,7 +93,7 @@ public class BlueTeleop extends OpMode {
     @Override
     public void init(){
 
-        Revolver = new TeleopRev(hardwareMap);
+        Revolver = new TeleopRev1(hardwareMap);
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot orientation = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.DOWN,
@@ -208,6 +209,20 @@ public class BlueTeleop extends OpMode {
             } else {
                 armMovingAuto = false;
             }
+        }
+
+        double manualPower = 0.0;
+        if (gamepad1.dpad_right) {
+            Revolver.setManualPower(manualPower = 1.0);
+        }
+        if (gamepad1.dpad_left) {
+            Revolver.setManualPower(manualPower = -1.0);
+        }
+        if(gamepad1.dpadRightWasReleased()){
+            Revolver.setManualPower(0);
+        }
+        if(gamepad1.dpadLeftWasPressed()){
+            Revolver.setManualPower(0);
         }
 
         if (gamepad2.xWasPressed()) {

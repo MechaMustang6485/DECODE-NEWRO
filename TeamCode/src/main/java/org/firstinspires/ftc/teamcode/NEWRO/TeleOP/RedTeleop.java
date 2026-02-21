@@ -27,6 +27,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TeleopRev;
+import org.firstinspires.ftc.teamcode.NEWRO.subsystem.TeleopRev1;
 
 
 import java.util.List;
@@ -50,6 +51,9 @@ public class RedTeleop extends OpMode {
     private ElapsedTime armTimer = new ElapsedTime();
     private boolean armMovingAuto = false;
 
+    private boolean o = false;
+
+    public static int target = 1;
 
     //parts of robot
     private CRServo turretServo;
@@ -59,7 +63,7 @@ public class RedTeleop extends OpMode {
     private Limelight3A limelight;
     private IMU imu;
     private GoBildaPinpointDriver pinpoint;
-    TeleopRev Revolver;
+    TeleopRev1 Revolver;
     private DcMotor leftFront;
     private DcMotor rightFront;
     private DcMotor rightBack;
@@ -95,7 +99,7 @@ public class RedTeleop extends OpMode {
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());//allow to do stuff in dash board
 
-        Revolver = new TeleopRev(hardwareMap);
+        Revolver = new TeleopRev1(hardwareMap);
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot orientation = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.DOWN,
@@ -103,7 +107,7 @@ public class RedTeleop extends OpMode {
         imu.initialize(new IMU.Parameters(orientation));
 
         Intake = hardwareMap.get(DcMotor.class, "intake");
-        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+       // Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Intake.setDirection(DcMotor.Direction.REVERSE);
 
@@ -212,6 +216,21 @@ public class RedTeleop extends OpMode {
             }
         }
 
+        double manualPower = 0.0;
+        if (gamepad1.dpad_right) {
+           Revolver.setManualPower(manualPower = 1.0);
+        }
+        if (gamepad1.dpad_left) {
+            Revolver.setManualPower(manualPower = -1.0);
+        }
+        if(gamepad1.dpadRightWasReleased()){
+            Revolver.setManualPower(0);
+        }
+        if(gamepad1.dpadLeftWasPressed()){
+            Revolver.setManualPower(0);
+        }
+
+
         if (gamepad2.xWasPressed()) {
             if (Revolver.getTarget() == 0) {
                 Revolver.setTargetPosition(96);
@@ -234,6 +253,7 @@ public class RedTeleop extends OpMode {
                 Revolver.goToSlot(0);
             }
         }
+
 
 
         if (gamepad2.dpadLeftWasPressed())  Intake.setPower(-1);
@@ -280,31 +300,33 @@ public class RedTeleop extends OpMode {
         LLResult llResult = limelight.getLatestResult();
 
 
-        if (llResult != null) {
+        if (llResult != null && llResult.isValid()) {
+            List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
+            for (LLResultTypes.FiducialResult fr : fiducialResults) {
+                if (fr.getFiducialId() == 24) {
+
+                    double TX = fr.getTargetXDegrees();
+                    double power = calculatePID(TX);
+
+                    int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
+                    if (Limits) {
+                        if (currentPos >= Maxpo && power > 0) {
+                            power = 0;
+                        } else if (currentPos <= MinPo && power < 0) {
+                            power = 0;
+                        }
+
+                    }
+
+                    turretServo.setPower(power);
+
+                } else {
+                    turretServo.setPower(0);
 
 
-            double TX = llResult.getTx();
-            double power = calculatePID(TX);
-
-            // Safety Limits
-            int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
-            if (Limits) {
-                if (currentPos >= Maxpo && power > 0){
-                    power = 0;
                 }
-
-                else if (currentPos <= MinPo && power < 0){
-                    power = 0;
-                };
             }
-
-            turretServo.setPower(power);
-            status = "Sees" + TARGET_ID;
-        } else {
-            turretServo.setPower(0);
-            status = "Searching";
         }
-
     }
     public void DriveInit() {
 
