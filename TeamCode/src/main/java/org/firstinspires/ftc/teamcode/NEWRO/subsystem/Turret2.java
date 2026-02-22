@@ -44,7 +44,7 @@ public class Turret2 {
 
 
         Intake = hardwareMap.get(DcMotor.class, "intake");
-        Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+       // Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Intake.setDirection(DcMotor.Direction.REVERSE);
     }
@@ -57,7 +57,7 @@ public class Turret2 {
 
 
 
-            if (llResult != null && llResult.isValid()) {
+            if (llResult != null) {
                 List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
                 for (LLResultTypes.FiducialResult fr : fiducialResults) {
                     if (fr.getFiducialId() == 24) {

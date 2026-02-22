@@ -9,6 +9,7 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -70,6 +71,7 @@ public class RedTeleop extends OpMode {
     private DcMotor leftBack;
     private DcMotor Intake;
 
+
     //turret
     private int lockedTargetID = -1;
     public static int TARGET_ID = 24;
@@ -78,13 +80,15 @@ public class RedTeleop extends OpMode {
     public static double MaxPower = 0.5;
     public static double MinPower = 0.05;
     public static double Tolerance = 0.5;
-    public static int LIMELIGHT_PIPELINE = 8;
+    public static int LIMELIGHT_PIPELINE = 5;
 
     // Safety Limits
     public static boolean Limits = true;
     public static int MinPo = -7300;
     public static int Maxpo = 6300;
 
+    private boolean LEDtimer = false;
+    private int LEDdelay = 2000;
 
     //do not touch, for turret
     private double lastError = 0;
@@ -155,12 +159,15 @@ public class RedTeleop extends OpMode {
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
         configurePinpoint();
         status = "Initialized";
+
+
     }
 
     @Override
     public void start() {
         limelight.start();
         pidTimer.reset();
+
     }
 
     @Override
@@ -176,19 +183,19 @@ public class RedTeleop extends OpMode {
 
         if (RevovlerMoving) {//this works
             double elapsed = RevolverTimer.seconds();
-            if (elapsed < 1.3) {
+            if (elapsed < 0.5) {
                 Revolver.setTargetPosition(240);
-                if (elapsed > 0.6 && elapsed < 1) arm.setPosition(ARM_UP);
+                if (elapsed > 0.3 && elapsed < 0.45) arm.setPosition(ARM_UP);
                 else arm.setPosition(ARM_DOWN);
             }
-            else if (elapsed < 2.4) {
+            else if (elapsed < 1.0) {
                 Revolver.setTargetPosition(144);
-                if (elapsed > 1.7 && elapsed < 2.2) arm.setPosition(ARM_UP);
+                if (elapsed > 0.8 && elapsed < 0.95) arm.setPosition(ARM_UP);
                 else arm.setPosition(ARM_DOWN);
             }
-            else if (elapsed < 3.9) {
+            else if (elapsed < 1.5) {
                 Revolver.setTargetPosition(48);
-                if (elapsed > 3 && elapsed < 3.5) arm.setPosition(ARM_UP);
+                if (elapsed > 1.3 && elapsed < 1.45) arm.setPosition(ARM_UP);
                 else arm.setPosition(ARM_DOWN);
             }
             else {
@@ -216,12 +223,12 @@ public class RedTeleop extends OpMode {
             }
         }
 
-        double manualPower = 0.0;
+
         if (gamepad1.dpad_right) {
-           Revolver.setManualPower(manualPower = 1.0);
+           Revolver.setManualPower( 1.0);
         }
         if (gamepad1.dpad_left) {
-            Revolver.setManualPower(manualPower = -1.0);
+            Revolver.setManualPower( -1.0);
         }
         if(gamepad1.dpadRightWasReleased()){
             Revolver.setManualPower(0);
@@ -285,6 +292,7 @@ public class RedTeleop extends OpMode {
             shooterB.setVelocity(0);
             Intake.setPower(0);
         }
+
         updateTelemetry();
     }
 
@@ -294,38 +302,39 @@ public class RedTeleop extends OpMode {
     }
 
 
+
+
     private void runTurretLogic() {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         limelight.updateRobotOrientation(orientation.getYaw());
         LLResult llResult = limelight.getLatestResult();
 
 
-        if (llResult != null && llResult.isValid()) {
-            List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
-            for (LLResultTypes.FiducialResult fr : fiducialResults) {
-                if (fr.getFiducialId() == 24) {
+        if (llResult != null) {
+            double TX = llResult.getTx();
+            double power = calculatePID(TX);
 
-                    double TX = fr.getTargetXDegrees();
-                    double power = calculatePID(TX);
-
-                    int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
-                    if (Limits) {
-                        if (currentPos >= Maxpo && power > 0) {
-                            power = 0;
-                        } else if (currentPos <= MinPo && power < 0) {
-                            power = 0;
-                        }
-
-                    }
-
-                    turretServo.setPower(power);
-
-                } else {
-                    turretServo.setPower(0);
-
-
+            // Safety Limits
+            int currentPos = Intake.getCurrentPosition();//the encoder make thing more accuret
+            if (Limits) {
+                if (currentPos >= Maxpo && power > 0){
+                    power = 0;
                 }
+
+                else if (currentPos <= MinPo && power < 0){
+                    power = 0;
+                };
             }
+
+            turretServo.setPower(power);
+            status = "Sees" + TARGET_ID;
+        } else {
+            turretServo.setPower(0);
+            status = "Searching";
+        }
+        if (gamepad1.a){
+            Intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            Intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
     }
     public void DriveInit() {
@@ -401,9 +410,11 @@ public class RedTeleop extends OpMode {
         return Math.max(-MaxPower, Math.min(MaxPower, output));
     }
 
+
+
     private void updateTelemetry() {
         telemetry.addData("Status", status);
-        telemetry.addData("Turret Pos", leftFront.getCurrentPosition());
+        telemetry.addData("Turret Pos", Intake.getCurrentPosition());
         telemetry.addData("Turret Power", turretServo.getPower());
         telemetry.addData("Encoder", Revolver.getEncoder());
         telemetry.addData("target", Revolver.getTarget());
